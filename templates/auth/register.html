@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}注册 - 健身达人{% endblock %}
+
+{% block auth_content %}
+<div class="min-h-screen flex relative overflow-hidden">
+
+    <!-- Background image -->
+    <div class="absolute inset-0">
+        <img src="{{ url_for('static', filename='images/bg_login.jpg') }}" alt="background"
+            class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-slate-900/40"></div>
+    </div>
+
+    <!-- Decorative elements -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/3 left-1/3 w-80 h-80 rounded-full bg-green-500/10 blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/3 right-1/4 w-60 h-60 rounded-full bg-purple-500/8 blur-3xl"></div>
+    </div>
+
+    <!-- Left panel - Info -->
+    <div class="relative z-10 w-1/2 flex flex-col justify-center px-16 py-12 hidden md:flex">
+        <div class="max-w-lg">
+            <div class="flex items-center gap-4 mb-10">
+                <div
+                    class="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-3xl shadow-2xl shadow-green-500/30">
+                    💪
+                </div>
+                <div>
+                    <h1 class="text-4xl font-bold gradient-text">健身达人</h1>
+                    <p class="text-slate-400 text-sm mt-1">FitnessPro · 加入健康大家庭</p>
+                </div>
+            </div>
+
+            <h2 class="text-5xl font-bold text-white leading-tight mb-6">
+                一起成为<br>
+                <span class="gradient-text">健身达人</span>
+            </h2>
+
+            <div class="space-y-5">
+                <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/8">
+                    <div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center text-xl shrink-0">
+                        🎯</div>
+                    <div>
+                        <p class="font-semibold text-white text-sm mb-1">热量差实时计算</p>
+                        <p class="text-slate-400 text-xs">科学记录摄入与消耗，让减脂增肌更高效</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/8">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-xl shrink-0">
+                        🧠</div>
+                    <div>
+                        <p class="font-semibold text-white text-sm mb-1">AI 专业分析</p>
+                        <p class="text-slate-400 text-xs">智谱AI营养师，为你量身定制健康建议</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/8">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-xl shrink-0">
+                        🏆</div>
+                    <div>
+                        <p class="font-semibold text-white text-sm mb-1">打卡激励系统</p>
+                        <p class="text-slate-400 text-xs">每日打卡，坚持养成好习惯，积累健康财富</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right panel - Register form -->
+    <div class="relative z-10 w-full md:w-1/2 flex items-center justify-center px-6 py-12">
+        <div class="glass-card w-full max-w-md p-8 shadow-2xl" style="background: rgba(15, 23, 42, 0.85);">
+
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div
+                    class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-lg shadow-purple-500/30">
+                    🌟
+                </div>
+                <h2 class="text-2xl font-bold text-white">创建新账户</h2>
+                <p class="text-slate-400 text-sm mt-1">加入健身达人，开启健康之旅</p>
+            </div>
+
+            <!-- Form -->
+            <form method="POST" id="registerForm" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">用户名</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">👤</span>
+                        <input id="username" name="username" type="text" required class="input-field pl-10"
+                            placeholder="3-20个字符" minlength="3" maxlength="20">
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">支持中英文、数字，3-20个字符</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">电子邮箱</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">📧</span>
+                        <input id="email" name="email" type="email" required class="input-field pl-10"
+                            placeholder="请输入有效的邮箱地址">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">验证码</label>
+                    <div class="flex gap-3">
+                        <div class="relative flex-1">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">🔑</span>
+                            <input id="verification_code" name="verification_code" type="text" required
+                                class="input-field pl-10" placeholder="6位数字验证码" maxlength="6">
+                        </div>
+                        <button type="button" id="sendCodeBtn" onclick="sendVerificationCode()"
+                            class="btn-secondary px-4 py-2 text-sm whitespace-nowrap min-w-[100px] justify-center">
+                            发送验证码
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">密码</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">🔒</span>
+                        <input id="password" name="password" type="password" required class="input-field pl-10"
+                            placeholder="至少6位密码" minlength="6" oninput="checkPasswordStrength(this.value)">
+                    </div>
+                    <!-- Password strength indicator -->
+                    <div class="flex gap-1 mt-2" id="strength-bars">
+                        <div class="h-1 flex-1 rounded-full bg-white/10" id="bar1"></div>
+                        <div class="h-1 flex-1 rounded-full bg-white/10" id="bar2"></div>
+                        <div class="h-1 flex-1 rounded-full bg-white/10" id="bar3"></div>
+                        <div class="h-1 flex-1 rounded-full bg-white/10" id="bar4"></div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1" id="strength-text">请输入密码</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">确认密码</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">✅</span>
+                        <input id="confirm_password" name="confirm_password" type="password" required
+                            class="input-field pl-10" placeholder="再次输入密码">
+                    </div>
+                </div>
+
+                <button type="submit" id="registerBtn" class="btn-primary w-full justify-center py-3 text-base"
+                    style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); box-shadow: 0 8px 25px rgba(139,92,246,0.35);">
+                    <span>✨</span>
+                    <span>立即注册</span>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="flex items-center gap-4 my-6">
+                <div class="flex-1 h-px bg-white/10"></div>
+                <span class="text-slate-500 text-xs">已有账户？</span>
+                <div class="flex-1 h-px bg-white/10"></div>
+            </div>
+
+            <!-- Login link -->
+            <a href="{{ url_for('login') }}"
+                class="btn-secondary w-full justify-center py-3 text-sm hover:border-green-500/40 hover:text-green-400">
+                <span>🔑</span>
+                <span>返回登录</span>
+            </a>
+
+            <p class="text-center text-xs text-slate-600 mt-6">健身达人 FitnessPro · 让健康触手可及</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function sendVerificationCode() {
+        const email = document.getElementById('email').value.trim();
+        const btn = document.getElementById('sendCodeBtn');
+
+        if (!email) {
+            alert('请输入邮箱地址');
+            return;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            alert('请输入有效的邮箱地址');
+            return;
+        }
+
+        // Disable button
+        btn.disabled = true;
+        btn.textContent = '发送中...';
+
+        fetch('/api/send-code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email: email })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('验证码已发送，请查收邮件');
+                    let countdown = 60;
+                    const timer = setInterval(() => {
+                        btn.textContent = `${countdown}s 后重试`;
+                        countdown--;
+                        if (countdown < 0) {
+                            clearInterval(timer);
+                            btn.disabled = false;
+                            btn.textContent = '发送验证码';
+                        }
+                    }, 1000);
+                } else {
+                    alert(data.message);
+                    btn.disabled = false;
+                    btn.textContent = '发送验证码';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('发送失败，请稍后重试');
+                btn.disabled = false;
+                btn.textContent = '发送验证码';
+            });
+    }
+
+    function checkPasswordStrength(pwd) {
+        const bars = [document.getElementById('bar1'), document.getElementById('bar2'),
+        document.getElementById('bar3'), document.getElementById('bar4')];
+        const text = document.getElementById('strength-text');
+
+        bars.forEach(b => b.style.background = 'rgba(255,255,255,0.1)');
+
+        if (!pwd) { text.textContent = '请输入密码'; text.className = 'text-xs text-slate-500 mt-1'; return; }
+
+        let score = 0;
+        if (pwd.length >= 6) score++;
+        if (pwd.length >= 10) score++;
+        if (/[A-Z]/.test(pwd) || /[0-9]/.test(pwd)) score++;
+        if (/[!@#$%^&*]/.test(pwd)) score++;
+
+        const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e'];
+        const labels = ['弱', '一般', '较强', '强'];
+
+        for (let i = 0; i < score; i++) bars[i].style.background = colors[score - 1];
+        text.textContent = `密码强度：${labels[score - 1] || '弱'}`;
+        text.className = 'text-xs mt-1';
+        text.style.color = colors[score - 1] || '#ef4444';
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', function (e) {
+        const pwd = document.getElementById('password').value;
+        const confirm = document.getElementById('confirm_password').value;
+        if (pwd !== confirm) {
+            e.preventDefault();
+            showToast('两次输入的密码不一致', 'error');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}我的 - 健身达人{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+    }
+
+    .gender-btn {
+        flex: 1;
+        padding: 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: #94a3b8;
+        font-weight: 500;
+        text-align: center;
+        transition: all .25s ease;
+    }
+
+    .gender-btn.active {
+        background: rgba(34, 197, 94, 0.2);
+        border-color: #22c55e;
+        color: #4ade80;
+    }
+
+    .bmr-badge {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #22c55e, #4ade80, #86efac);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto space-y-6 fade-in">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-100">我的</h2>
+            <p class="text-sm text-slate-400 mt-1">管理个人信息与身体数据</p>
+        </div>
+        <a href="{{ url_for('settings') }}" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10
+              text-slate-300 hover:bg-white/10 hover:text-slate-100 transition-all text-sm font-medium">
+            ⚙️ 设置
+        </a>
+    </div>
+
+    <!-- Avatar & Name -->
+    <div class="glass-card p-6 flex items-center gap-5">
+        <div class="profile-avatar">{{ current_user.username[0].upper() }}</div>
+        <div>
+            <p class="text-xl font-bold text-slate-100">{{ current_user.username }}</p>
+            <p class="text-sm text-slate-400">{{ current_user.email or '未绑定邮箱' }}</p>
+            <p class="text-xs text-slate-500 mt-1">注册于 {{ current_user.created_at.strftime('%Y-%m-%d') }}</p>
+        </div>
+    </div>
+
+    <!-- BMR Display -->
+    <div class="glass-card p-6 text-center">
+        <p class="text-slate-400 text-sm mb-1">基础代谢率 (BMR)</p>
+        <p class="bmr-badge" id="bmr-display">
+            {% if bmr %}{{ bmr }} <span class="text-xl">kcal/天</span>{% else %}—{% endif %}
+        </p>
+        <p class="text-xs text-slate-500 mt-2">Mifflin-St Jeor 公式计算 · 填写下方信息后实时更新</p>
+    </div>
+
+    <!-- Profile Form -->
+    <div class="glass-card p-6">
+        <h3 class="text-base font-semibold text-slate-200 mb-5">身体信息</h3>
+        <form id="profile-form" action="{{ url_for('profile_update') }}" method="POST" class="space-y-5">
+
+            <!-- Height & Weight -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-2">身高 (cm)</label>
+                    <input type="number" name="height" id="inp-height" step="0.1" min="50" max="250"
+                        value="{{ current_user.height or '' }}" placeholder="例如 170" class="input-field" />
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-2">体重 (kg)</label>
+                    <input type="number" name="weight_kg" id="inp-weight" step="0.1" min="10" max="500"
+                        value="{{ current_user.weight_kg or '' }}" placeholder="例如 65" class="input-field" />
+                </div>
+            </div>
+
+            <!-- Age -->
+            <div>
+                <label class="block text-xs text-slate-400 mb-2">年龄</label>
+                <input type="number" name="age" id="inp-age" min="1" max="120" value="{{ current_user.age or '' }}"
+                    placeholder="例如 25" class="input-field" />
+            </div>
+
+            <!-- Gender -->
+            <div>
+                <label class="block text-xs text-slate-400 mb-2">性别</label>
+                <input type="hidden" name="gender" id="inp-gender" value="{{ current_user.gender or '' }}" />
+                <div class="flex gap-3">
+                    <button type="button" onclick="setGender('male')"
+                        class="gender-btn {% if current_user.gender == 'male' %}active{% endif %}" id="btn-male">
+                        👨 男
+                    </button>
+                    <button type="button" onclick="setGender('female')"
+                        class="gender-btn {% if current_user.gender == 'female' %}active{% endif %}" id="btn-female">
+                        👩 女
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary w-full justify-center">
+                💾 保存信息
+            </button>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function setGender(g) {
+        document.getElementById('inp-gender').value = g;
+        document.getElementById('btn-male').classList.toggle('active', g === 'male');
+        document.getElementById('btn-female').classList.toggle('active', g === 'female');
+        recalcBMR();
+    }
+
+    function recalcBMR() {
+        const h = parseFloat(document.getElementById('inp-height').value);
+        const w = parseFloat(document.getElementById('inp-weight').value);
+        const a = parseInt(document.getElementById('inp-age').value);
+        const g = document.getElementById('inp-gender').value;
+        const el = document.getElementById('bmr-display');
+
+        if (h && w && a && g) {
+            let base = 10 * w + 6.25 * h - 5 * a;
+            let bmr = g === 'male' ? base + 5 : base - 161;
+            el.innerHTML = `${bmr.toFixed(1)} <span class="text-xl">kcal/天</span>`;
+        } else {
+            el.textContent = '—';
+        }
+    }
+
+    ['inp-height', 'inp-weight', 'inp-age'].forEach(id => {
+        document.getElementById(id).addEventListener('input', recalcBMR);
+    });
+</script>
+{% endblock %}

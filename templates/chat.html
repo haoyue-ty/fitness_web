@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}健康助手 - 健身达人{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 160px);
+    }
+
+    @media (max-width: 768px) {
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 0;
+    }
+
+    .msg-bubble {
+        max-width: 75%;
+        padding: 12px 16px;
+        border-radius: 16px;
+        font-size: 14px;
+        line-height: 1.6;
+        animation: fadeInUp 0.3s ease;
+        word-break: break-word;
+    }
+
+    .msg-user {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 4px;
+    }
+
+    .msg-assistant {
+        background: rgba(255, 255, 255, 0.08);
+        color: #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom-left-radius: 4px;
+    }
+
+    .typing-indicator span {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #64748b;
+        margin: 0 2px;
+        animation: typing 1.4s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+
+        0%,
+        60%,
+        100% {
+            transform: translateY(0);
+            opacity: 0.4;
+        }
+
+        30% {
+            transform: translateY(-6px);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in chat-container">
+    <!-- Header -->
+    <div class="mb-4">
+        <h1 class="text-3xl font-bold text-white flex items-center gap-3">🤖 健康助手</h1>
+        <p class="text-slate-400 mt-1 text-sm">由智谱AI驱动，随时为你提供专业健康建议</p>
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="glass-card flex-1 flex flex-col overflow-hidden">
+        <div class="chat-messages p-6" id="chatMessages">
+            <!-- Welcome message -->
+            <div class="flex gap-3 mb-4">
+                <div
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-sm shrink-0">
+                    🤖</div>
+                <div class="msg-bubble msg-assistant">
+                    你好！我是你的AI健康助手 😊<br>
+                    我可以帮你解答关于<b>健身、饮食、营养、减脂增肌</b>等方面的问题。<br>
+                    随时向我提问吧！💪
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="border-t border-white/8 p-4">
+            <div class="flex gap-3">
+                <input type="text" id="chatInput" class="input-field flex-1" placeholder="输入你的健康问题..."
+                    onkeydown="if(event.key==='Enter')sendMessage()">
+                <button onclick="sendMessage()" id="sendBtn" class="btn-primary shrink-0">
+                    发送 ➡️
+                </button>
+            </div>
+            <div class="flex gap-2 mt-3 flex-wrap">
+                <button onclick="quickAsk('如何科学减脂？')"
+                    class="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-green-400 hover:border-green-500/40 transition-all">如何科学减脂？</button>
+                <button onclick="quickAsk('推荐一份健康早餐')"
+                    class="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-green-400 hover:border-green-500/40 transition-all">推荐健康早餐</button>
+                <button onclick="quickAsk('运动后应该吃什么？')"
+                    class="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-green-400 hover:border-green-500/40 transition-all">运动后吃什么？</button>
+                <button onclick="quickAsk('每天喝多少水合适？')"
+                    class="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-green-400 hover:border-green-500/40 transition-all">每天喝多少水？</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let chatHistory = [];
+
+    function quickAsk(q) {
+        document.getElementById('chatInput').value = q;
+        sendMessage();
+    }
+
+    function addMessage(role, content) {
+        const container = document.getElementById('chatMessages');
+        const wrapper = document.createElement('div');
+        wrapper.className = `flex gap-3 mb-4 ${role === 'user' ? 'justify-end' : ''}`;
+
+        if (role === 'user') {
+            wrapper.innerHTML = `
+      <div class="msg-bubble msg-user">${escapeHtml(content)}</div>
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm shrink-0">👤</div>
+    `;
+        } else {
+            wrapper.innerHTML = `
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-sm shrink-0">🤖</div>
+      <div class="msg-bubble msg-assistant">${formatContent(content)}</div>
+    `;
+        }
+        container.appendChild(wrapper);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function showTyping() {
+        const container = document.getElementById('chatMessages');
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex gap-3 mb-4';
+        wrapper.id = 'typingIndicator';
+        wrapper.innerHTML = `
+    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-sm shrink-0">🤖</div>
+    <div class="msg-bubble msg-assistant typing-indicator"><span></span><span></span><span></span></div>
+  `;
+        container.appendChild(wrapper);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function removeTyping() {
+        const el = document.getElementById('typingIndicator');
+        if (el) el.remove();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const msg = input.value.trim();
+        if (!msg) return;
+
+        input.value = '';
+        addMessage('user', msg);
+        chatHistory.push({ role: 'user', content: msg });
+
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+        showTyping();
+
+        try {
+            const result = await apiPost('/chat/message', { messages: chatHistory });
+            removeTyping();
+            if (result.success) {
+                chatHistory.push({ role: 'assistant', content: result.response });
+                addMessage('assistant', result.response);
+            } else {
+                addMessage('assistant', '抱歉，我暂时无法回应，请稍后重试。');
+            }
+        } catch (e) {
+            removeTyping();
+            addMessage('assistant', '网络错误，请检查网络后重试。');
+        }
+        btn.disabled = false;
+        input.focus();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function formatContent(text) {
+        return text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+    }
+</script>
+{% endblock %}

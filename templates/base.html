@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}健身达人{% endblock %}</title>
+  <meta name="description" content="健身达人 - 您的智能健康管理平台，提供饮食记录、体重追踪、AI健康分析和打卡功能">
+
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- ECharts CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <!-- Google Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans SC', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            },
+            accent: {
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+            },
+            energy: {
+              400: '#fb923c',
+              500: '#f97316',
+              600: '#ea580c',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    }
+
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --border: rgba(255, 255, 255, 0.08);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --accent-green: #22c55e;
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* Glassmorphism card */
+    .glass-card {
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+    }
+
+    /* Gradient text */
+    .gradient-text {
+      background: linear-gradient(135deg, #22c55e, #4ade80, #86efac);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Sidebar nav */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      color: #94a3b8;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      font-weight: 500;
+    }
+
+    .nav-item:hover {
+      background: rgba(34, 197, 94, 0.12);
+      color: #4ade80;
+      transform: translateX(4px);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(74, 222, 128, 0.1));
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeInUp 0.5s ease-out forwards;
+    }
+
+    @keyframes pulse-glow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.3);
+      }
+
+      50% {
+        box-shadow: 0 0 0 12px rgba(34, 197, 94, 0);
+      }
+    }
+
+    .pulse-glow {
+      animation: pulse-glow 2s infinite;
+    }
+
+    /* Stat cards */
+    .stat-card {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(34, 197, 94, 0.3);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-card.green::before {
+      background: linear-gradient(90deg, #22c55e, #4ade80);
+    }
+
+    .stat-card.purple::before {
+      background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+    }
+
+    .stat-card.orange::before {
+      background: linear-gradient(90deg, #f97316, #fb923c);
+    }
+
+    .stat-card.blue::before {
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    }
+
+    /* Button styles */
+    .btn-primary {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(34, 197, 94, 0.35);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #94a3b8;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f1f5f9;
+    }
+
+    /* Input styles */
+    .input-field {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #f1f5f9;
+      width: 100%;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, 0.05);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+    }
+
+    .input-field::placeholder {
+      color: #475569;
+    }
+
+    /* Toast notifications */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 14px;
+      animation: fadeInUp 0.3s ease;
+      max-width: 320px;
+    }
+
+    .toast.success {
+      background: rgba(34, 197, 94, 0.9);
+      color: white;
+    }
+
+    .toast.error {
+      background: rgba(239, 68, 68, 0.9);
+      color: white;
+    }
+
+    .toast.info {
+      background: rgba(59, 130, 246, 0.9);
+      color: white;
+    }
+
+    .toast.warning {
+      background: rgba(245, 158, 11, 0.9);
+      color: white;
+    }
+  </style>
+
+  {% block extra_styles %}{% endblock %}
+</head>
+
+<body class="bg-slate-900">
+
+  {% if current_user and current_user.is_authenticated %}
+  <!-- Sidebar Layout -->
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 border-r border-white/5 flex-col fixed top-0 left-0 h-screen z-40 hidden md:flex">
+      <!-- Logo -->
+      <div class="p-6 border-b border-white/5">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-xl shadow-lg">
+            💪</div>
+          <div>
+            <h1 class="font-bold text-lg gradient-text">健身达人</h1>
+            <p class="text-xs text-slate-500">科学健康管理</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Info -->
+      <div class="px-4 py-4 border-b border-white/5">
+        <div class="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/5">
+          <div
+            class="w-9 h-9 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold text-sm">
+            {{ current_user.username[0].upper() }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-slate-200 truncate">{{ current_user.username }}</p>
+            <p class="text-xs text-slate-500">健康达人</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+        <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+          <span class="text-xl">🏠</span>
+          <span class="text-sm">仪表盘</span>
+        </a>
+        <a href="{{ url_for('diet') }}" class="nav-item {% if request.endpoint == 'diet' %}active{% endif %}">
+          <span class="text-xl">🍱</span>
+          <span class="text-sm">饮食记录</span>
+        </a>
+        <a href="{{ url_for('weight') }}" class="nav-item {% if request.endpoint == 'weight' %}active{% endif %}">
+          <span class="text-xl">📈</span>
+          <span class="text-sm">体重曲线</span>
+        </a>
+        <a href="{{ url_for('chat') }}" class="nav-item {% if request.endpoint == 'chat' %}active{% endif %}">
+          <span class="text-xl">🤖</span>
+          <span class="text-sm">健康助手</span>
+        </a>
+        <a href="{{ url_for('checkin') }}" class="nav-item {% if request.endpoint == 'checkin' %}active{% endif %}">
+          <span class="text-xl">📅</span>
+          <span class="text-sm">打卡日历</span>
+        </a>
+      </nav>
+
+      <!-- Logout -->
+      <div class="p-4 border-t border-white/5">
+        <a href="{{ url_for('logout') }}" class="nav-item text-rose-400 hover:text-rose-300 hover:bg-rose-500/10">
+          <span class="text-xl">🚪</span>
+          <span class="text-sm">退出登录</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Mobile Top Header -->
+    <header
+      class="md:hidden fixed top-0 left-0 right-0 bg-slate-900/90 backdrop-blur-md border-b border-white/5 flex justify-between items-center p-4 z-40 shadow-lg h-[60px]">
+      <div class="flex items-center gap-2">
+        <div
+          class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-sm shadow-lg">
+          💪</div>
+        <h1 class="font-bold text-base gradient-text">健身达人</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <div
+          class="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold text-xs">
+          {{ current_user.username[0].upper() }}
+        </div>
+        <a href="{{ url_for('logout') }}" class="text-xs text-rose-400 px-2 py-1 bg-rose-500/10 rounded-md">退出</a>
+      </div>
+    </header>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav
+      class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-white/5 flex justify-around items-center px-1 py-1 z-50 rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)] pb-[calc(0.25rem+env(safe-area-inset-bottom))]">
+      <a href="{{ url_for('dashboard') }}"
+        class="flex flex-col items-center gap-1 p-2 {% if request.endpoint == 'dashboard' %}text-green-400{% else %}text-slate-400{% endif %} hover:text-green-400 transition-colors">
+        <span class="text-xl leading-none">🏠</span>
+        <span class="text-[10px] font-medium">主页</span>
+      </a>
+      <a href="{{ url_for('diet') }}"
+        class="flex flex-col items-center gap-1 p-2 {% if request.endpoint == 'diet' %}text-green-400{% else %}text-slate-400{% endif %} hover:text-green-400 transition-colors">
+        <span class="text-xl leading-none">🍱</span>
+        <span class="text-[10px] font-medium">饮食</span>
+      </a>
+      <a href="{{ url_for('weight') }}"
+        class="flex flex-col items-center gap-1 p-2 {% if request.endpoint == 'weight' %}text-green-400{% else %}text-slate-400{% endif %} hover:text-green-400 transition-colors">
+        <span class="text-xl leading-none">📈</span>
+        <span class="text-[10px] font-medium">体重</span>
+      </a>
+      <a href="{{ url_for('chat') }}"
+        class="flex flex-col items-center gap-1 p-2 {% if request.endpoint == 'chat' %}text-green-400{% else %}text-slate-400{% endif %} hover:text-green-400 transition-colors">
+        <span class="text-xl leading-none">🤖</span>
+        <span class="text-[10px] font-medium">助手</span>
+      </a>
+      <a href="{{ url_for('checkin') }}"
+        class="flex flex-col items-center gap-1 p-2 {% if request.endpoint == 'checkin' %}text-green-400{% else %}text-slate-400{% endif %} hover:text-green-400 transition-colors">
+        <span class="text-xl leading-none">📅</span>
+        <span class="text-[10px] font-medium">打卡</span>
+      </a>
+    </nav>
+
+    <!-- Main content -->
+    <main
+      class="flex-1 w-full md:ml-64 min-h-screen p-4 pt-20 pb-24 md:p-8 md:pt-8 md:pb-8 overflow-x-hidden box-border">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% else %}
+  {% block auth_content %}{% endblock %}
+  {% endif %}
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Flash messages handler -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      {% for category, message in messages %}
+      showToast("{{ message }}", "{{ category if category != 'message' else 'info' }}");
+      {% endfor %}
+    });
+  </script>
+  {% endif %}
+  {% endwith %}
+
+  <script>
+    // Toast notification system
+    function showToast(msg, type = 'info', duration = 3500) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
+    // Global API helper
+    async function apiPost(url, data) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    }
+
+    async function apiDelete(url) {
+      const res = await fetch(url, { method: 'DELETE' });
+      return await res.json();
+    }
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

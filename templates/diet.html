@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block title %}饮食记录 - 健身达人{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">🍱 饮食记录</h1>
+            <p class="text-slate-400 mt-1 text-sm">{{ today.strftime('%Y年%m月%d日') }} · 科学饮食，健康生活</p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="stat-card green">
+            <p class="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">今日总摄入</p>
+            <p class="text-2xl font-bold text-white" id="totalCalories">{{ "%.0f"|format(total_calories) }}</p>
+            <p class="text-xs text-slate-500">kcal</p>
+        </div>
+        <div class="stat-card orange">
+            <p class="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">基础代谢</p>
+            <p class="text-2xl font-bold text-white">{{ bmr }}</p>
+            <p class="text-xs text-slate-500">kcal</p>
+        </div>
+        <div class="stat-card purple">
+            <p class="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">运动消耗</p>
+            <p class="text-2xl font-bold text-white" id="exerciseBurn">{{ "%.0f"|format(exercise_burn) }}</p>
+            <p class="text-xs text-slate-500">kcal</p>
+        </div>
+        <div class="stat-card {% if calorie_diff > 0 %}blue{% else %}green{% endif %}">
+            <p class="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">热量差</p>
+            <p class="text-2xl font-bold {% if calorie_diff > 150 %}text-rose-400{% elif calorie_diff < -150 %}text-blue-400{% else %}text-green-400{% endif %}"
+                id="calorieDiff">{{ "%+.0f"|format(calorie_diff) }}</p>
+            <p class="text-xs text-slate-500">kcal · {{ '过剩' if calorie_diff > 0 else '亏缺' }}</p>
+        </div>
+    </div>
+
+    <!-- Exercise Input -->
+    <div class="glass-card p-5 mb-6">
+        <h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">🏃 今日运动消耗</h3>
+        <div class="flex flex-col sm:flex-row gap-3">
+            <input type="number" id="exerciseInput" class="input-field flex-1" placeholder="输入运动消耗热量 (kcal)"
+                value="{{ today_exercise.calories_burned if today_exercise else '' }}">
+            <input type="text" id="exerciseDesc" class="input-field flex-1" placeholder="运动描述 (选填)"
+                value="{{ today_exercise.description if today_exercise else '' }}">
+            <button onclick="saveExercise()" class="btn-primary sm:shrink-0 justify-center">保存</button>
+        </div>
+    </div>
+
+    <!-- Meal Sections -->
+    {% for meal_type, meal_label, meal_icon, meal_records in
+    [('breakfast','早餐','🌅',breakfast),('lunch','午餐','☀️',lunch),('dinner','晚餐','🌙',dinner)] %}
+    <div class="glass-card p-6 mb-5">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>{{ meal_icon }}</span> {{ meal_label }}
+                <span class="text-xs text-slate-500 font-normal ml-2">{{
+                    "%.0f"|format(meal_records|sum(attribute='calories')) }} kcal</span>
+            </h2>
+            <div class="flex gap-2">
+                <button onclick="showRecognizeModal('{{ meal_type }}')" class="btn-secondary text-xs py-2 px-3">
+                    📸 拍照识别
+                </button>
+                <button onclick="showAddModal('{{ meal_type }}')" class="btn-primary text-xs py-2 px-3">
+                    ➕ 手动添加
+                </button>
+            </div>
+        </div>
+        <div class="space-y-2" id="{{ meal_type }}-list">
+            {% if meal_records %}
+            {% for record in meal_records %}
+            <div class="flex items-center justify-between py-3 px-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-all"
+                id="record-{{ record.id }}">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg">🍽️</span>
+                    <span class="text-sm text-slate-200">{{ record.food_name }}</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm font-semibold text-green-400">{{ "%.0f"|format(record.calories) }} kcal</span>
+                    <button onclick="deleteDiet({{ record.id }})"
+                        class="text-slate-500 hover:text-rose-400 transition-colors text-sm">✕</button>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p class="text-sm text-slate-500 text-center py-6">暂无{{ meal_label }}记录，快来添加吧！</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Add Food Modal -->
+<div id="addModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="glass-card p-6 w-full max-w-md mx-4" style="background: rgba(15,23,42,0.95);">
+        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">🍽️ 手动添加食物</h3>
+        <input type="hidden" id="addMealType">
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">食物名称</label>
+                <input type="text" id="addFoodName" class="input-field" placeholder="如：米饭、鸡胸肉">
+            </div>
+            <div>
+                <label class="block text-sm text-slate-300 mb-1">热量 (kcal)</label>
+                <input type="number" id="addCalories" class="input-field" placeholder="如：350">
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeAddModal()" class="btn-secondary flex-1 justify-center">取消</button>
+            <button onclick="submitAddFood()" class="btn-primary flex-1 justify-center">添加</button>
+        </div>
+    </div>
+</div>
+
+<!-- Recognize Modal -->
+<div id="recognizeModal"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="glass-card p-6 w-full max-w-md mx-4" style="background: rgba(15,23,42,0.95);">
+        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">📸 AI 食物识别</h3>
+        <input type="hidden" id="recMealType">
+        <div class="space-y-4">
+            <div class="border-2 border-dashed border-white/20 rounded-xl p-8 text-center cursor-pointer hover:border-green-500/40 transition-colors"
+                onclick="document.getElementById('imageUpload').click()">
+                <input type="file" id="imageUpload" accept="image/*" class="hidden" onchange="previewImage(this)">
+                <div id="uploadPreview" class="hidden mb-3">
+                    <img id="previewImg" class="max-h-40 mx-auto rounded-lg">
+                </div>
+                <div id="uploadPlaceholder">
+                    <span class="text-4xl">📷</span>
+                    <p class="text-sm text-slate-400 mt-2">点击上传食物图片</p>
+                    <p class="text-xs text-slate-500">支持 JPG、PNG 格式</p>
+                </div>
+            </div>
+            <div id="recognizeResult" class="hidden space-y-2">
+                <p class="text-sm text-slate-300 font-medium">识别结果：</p>
+                <div id="recognizeList"></div>
+            </div>
+            <div id="recognizeLoading" class="hidden text-center py-4">
+                <span class="text-2xl animate-spin inline-block">⏳</span>
+                <p class="text-sm text-slate-400 mt-2">AI 正在识别...</p>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeRecognizeModal()" class="btn-secondary flex-1 justify-center">取消</button>
+            <button onclick="doRecognize()" id="recBtn" class="btn-primary flex-1 justify-center">开始识别</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function showAddModal(mealType) {
+        document.getElementById('addMealType').value = mealType;
+        document.getElementById('addFoodName').value = '';
+        document.getElementById('addCalories').value = '';
+        document.getElementById('addModal').classList.remove('hidden');
+    }
+    function closeAddModal() { document.getElementById('addModal').classList.add('hidden'); }
+
+    function showRecognizeModal(mealType) {
+        document.getElementById('recMealType').value = mealType;
+        document.getElementById('imageUpload').value = '';
+        document.getElementById('uploadPreview').classList.add('hidden');
+        document.getElementById('uploadPlaceholder').classList.remove('hidden');
+        document.getElementById('recognizeResult').classList.add('hidden');
+        document.getElementById('recognizeLoading').classList.add('hidden');
+        document.getElementById('recognizeModal').classList.remove('hidden');
+    }
+    function closeRecognizeModal() { document.getElementById('recognizeModal').classList.add('hidden'); }
+
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('uploadPreview').classList.remove('hidden');
+                document.getElementById('uploadPlaceholder').classList.add('hidden');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    async function doRecognize() {
+        const fileInput = document.getElementById('imageUpload');
+        if (!fileInput.files || !fileInput.files[0]) { showToast('请先选择图片', 'warning'); return; }
+        const mealType = document.getElementById('recMealType').value;
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+
+        document.getElementById('recognizeLoading').classList.remove('hidden');
+        document.getElementById('recBtn').disabled = true;
+
+        try {
+            const res = await fetch('/diet/recognize', { method: 'POST', body: formData });
+            const data = await res.json();
+            document.getElementById('recognizeLoading').classList.add('hidden');
+            document.getElementById('recBtn').disabled = false;
+
+            if (data.success && data.foods) {
+                const list = document.getElementById('recognizeList');
+                list.innerHTML = '';
+                data.foods.forEach(food => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between py-2 px-3 rounded-lg bg-white/5 border border-white/8';
+                    div.innerHTML = `<span class="text-sm text-slate-200">${food.name}</span>
+          <div class="flex items-center gap-3">
+            <span class="text-sm text-green-400">${Math.round(food.calorie)} kcal</span>
+            <button onclick="addRecognizedFood('${mealType}','${food.name}',${food.calorie})" class="text-xs btn-primary py-1 px-2">添加</button>
+          </div>`;
+                    list.appendChild(div);
+                });
+                document.getElementById('recognizeResult').classList.remove('hidden');
+            } else {
+                showToast(data.message || '识别失败', 'error');
+            }
+        } catch (e) {
+            document.getElementById('recognizeLoading').classList.add('hidden');
+            document.getElementById('recBtn').disabled = false;
+            showToast('网络错误，请重试', 'error');
+        }
+    }
+
+    async function addRecognizedFood(mealType, name, calories) {
+        const result = await apiPost('/diet/add', { meal_type: mealType, food_name: name, calories: calories });
+        if (result.success) {
+            showToast(`已添加 ${name}`, 'success');
+            setTimeout(() => location.reload(), 800);
+        }
+    }
+
+    async function submitAddFood() {
+        const mealType = document.getElementById('addMealType').value;
+        const foodName = document.getElementById('addFoodName').value.trim();
+        const calories = parseFloat(document.getElementById('addCalories').value) || 0;
+
+        if (!foodName) { showToast('请输入食物名称', 'warning'); return; }
+
+        const result = await apiPost('/diet/add', { meal_type: mealType, food_name: foodName, calories: calories });
+        if (result.success) {
+            showToast('添加成功', 'success');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showToast(result.message || '添加失败', 'error');
+        }
+    }
+
+    async function deleteDiet(id) {
+        if (!confirm('确定删除这条记录吗？')) return;
+        const result = await apiDelete(`/diet/delete/${id}`);
+        if (result.success) {
+            document.getElementById(`record-${id}`).remove();
+            showToast('已删除', 'info');
+            setTimeout(() => location.reload(), 800);
+        }
+    }
+
+    async function saveExercise() {
+        const cal = parseFloat(document.getElementById('exerciseInput').value) || 0;
+        const desc = document.getElementById('exerciseDesc').value;
+        const result = await apiPost('/diet/exercise', { calories_burned: cal, description: desc });
+        if (result.success) {
+            showToast('运动消耗已保存', 'success');
+            setTimeout(() => location.reload(), 800);
+        }
+    }
+</script>
+{% endblock %}

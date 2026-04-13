@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}登录 - 健身达人{% endblock %}
+
+{% block auth_content %}
+<div class="min-h-screen flex relative overflow-hidden">
+
+    <!-- Background image -->
+    <div class="absolute inset-0">
+        <img src="{{ url_for('static', filename='images/bg_login.jpg') }}" alt="background"
+            class="w-full h-full object-cover">
+        <!-- Dark overlay with gradient -->
+        <div class="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-slate-900/40"></div>
+        <!-- Blur overlay on right -->
+        <div class="absolute inset-0 backdrop-blur-none"></div>
+    </div>
+
+    <!-- Decorative bubbles -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/3 w-96 h-96 rounded-full bg-green-500/10 blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/4 left-1/4 w-64 h-64 rounded-full bg-emerald-400/8 blur-2xl"></div>
+    </div>
+
+    <!-- Left panel - Branding -->
+    <div class="relative z-10 w-1/2 flex flex-col justify-center px-16 py-12 hidden md:flex">
+        <div class="max-w-lg">
+            <!-- Logo -->
+            <div class="flex items-center gap-4 mb-10">
+                <div
+                    class="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-3xl shadow-2xl shadow-green-500/30">
+                    💪
+                </div>
+                <div>
+                    <h1 class="text-4xl font-bold gradient-text">健身达人</h1>
+                    <p class="text-slate-400 text-sm mt-1">FitnessPro · 智能健康管理</p>
+                </div>
+            </div>
+
+            <!-- Tagline -->
+            <div class="mb-12">
+                <h2 class="text-5xl font-bold text-white leading-tight mb-4">
+                    开启你的<br>
+                    <span class="gradient-text">健康新旅程</span>
+                </h2>
+                <p class="text-slate-400 text-lg leading-relaxed">
+                    科学记录饮食 · 追踪体重变化 · AI 健康分析 · 坚持每日打卡
+                </p>
+            </div>
+
+            <!-- Feature highlights -->
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 text-slate-300">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400 text-sm">
+                        🍱</div>
+                    <span class="text-sm">AI 识别食物，智能计算热量</span>
+                </div>
+                <div class="flex items-center gap-3 text-slate-300">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 text-sm">
+                        📈</div>
+                    <span class="text-sm">体重变化可视化，专业健康分析</span>
+                </div>
+                <div class="flex items-center gap-3 text-slate-300">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400 text-sm">
+                        🤖</div>
+                    <span class="text-sm">智谱 AI 健康助手，随时随地咨询</span>
+                </div>
+                <div class="flex items-center gap-3 text-slate-300">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400 text-sm">
+                        🎯</div>
+                    <span class="text-sm">打卡日历，坚持养成健康习惯</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right panel - Login form -->
+    <div class="relative z-10 w-full md:w-1/2 flex items-center justify-center px-6 py-12">
+        <div class="glass-card w-full max-w-md p-8 shadow-2xl" style="background: rgba(15, 23, 42, 0.85);">
+
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div
+                    class="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-lg shadow-green-500/30">
+                    👋
+                </div>
+                <h2 class="text-2xl font-bold text-white">欢迎回来</h2>
+                <p class="text-slate-400 text-sm mt-1">登录你的健身达人账户</p>
+            </div>
+
+            <!-- Form -->
+            <form method="POST" id="loginForm" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">用户名</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">👤</span>
+                        <input id="username" name="username" type="text" required class="input-field pl-10"
+                            placeholder="请输入用户名" autocomplete="username">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">密码</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">🔒</span>
+                        <input id="password" name="password" type="password" required class="input-field pl-10"
+                            placeholder="请输入密码" autocomplete="current-password">
+                        <button type="button" onclick="togglePassword()"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors text-lg">
+                            👁️
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" id="loginBtn"
+                    class="btn-primary w-full justify-center py-3 text-base shadow-lg shadow-green-500/25">
+                    <span>🚀</span>
+                    <span>登录</span>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="flex items-center gap-4 my-6">
+                <div class="flex-1 h-px bg-white/10"></div>
+                <span class="text-slate-500 text-xs">还没有账户？</span>
+                <div class="flex-1 h-px bg-white/10"></div>
+            </div>
+
+            <!-- Register link -->
+            <a href="{{ url_for('register') }}"
+                class="btn-secondary w-full justify-center py-3 text-sm hover:border-green-500/40 hover:text-green-400">
+                <span>✨</span>
+                <span>立即注册新账户</span>
+            </a>
+
+            <!-- Footer -->
+            <p class="text-center text-xs text-slate-600 mt-6">健身达人 FitnessPro · 让健康触手可及</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function togglePassword() {
+        const pwd = document.getElementById('password');
+        pwd.type = pwd.type === 'password' ? 'text' : 'password';
+    }
+
+    // Enter key submit
+    document.getElementById('loginForm').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') this.submit();
+    });
+</script>
+{% endblock %}

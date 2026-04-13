@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}体重曲线 - 健身达人{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">📈 体重曲线</h1>
+            <p class="text-slate-400 mt-1 text-sm">追踪体重变化，科学管理身材</p>
+        </div>
+    </div>
+
+    <!-- Weight Input -->
+    <div class="glass-card p-6 mb-6">
+        <h3 class="text-base font-semibold text-white mb-4 flex items-center gap-2">⚖️ 记录今日体重</h3>
+        <div class="flex flex-col sm:flex-row gap-3 sm:items-end">
+            <div class="flex-1 w-full">
+                <label class="block text-xs text-slate-400 mb-1">日期</label>
+                <input type="date" id="weightDate" class="input-field w-full" value="{{ today.strftime('%Y-%m-%d') }}">
+            </div>
+            <div class="flex-1 w-full">
+                <label class="block text-xs text-slate-400 mb-1">体重 (kg)</label>
+                <input type="number" id="weightInput" class="input-field w-full" step="0.1" min="20" max="300"
+                    placeholder="如：65.5" value="{{ today_record.weight if today_record else '' }}">
+            </div>
+            <button onclick="saveWeight()" class="btn-primary sm:shrink-0 w-full sm:w-auto justify-center">
+                {{ '更新' if today_record else '记录' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="glass-card p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-semibold text-white flex items-center gap-2">📊 体重变化趋势</h3>
+        </div>
+        <div id="weightChart" style="width:100%;height:380px;"></div>
+    </div>
+
+    <!-- AI Analysis -->
+    <div class="glass-card p-6 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h3 class="text-base font-semibold text-white flex items-center gap-2">🧠 AI 健康分析</h3>
+            <button onclick="getAnalysis()" id="analysisBtn"
+                class="btn-primary text-xs py-2 px-4 self-start sm:self-auto">
+                获取 AI 分析
+            </button>
+        </div>
+        <div id="analysisContent"
+            class="text-sm text-slate-300 leading-relaxed p-4 rounded-xl bg-white/5 border border-white/8 min-h-[80px]">
+            <p class="text-slate-500">点击上方按钮，AI 营养师将根据你近7天的体重和热量数据给出专业建议 ✨</p>
+        </div>
+    </div>
+
+    <!-- Weight History Table -->
+    <div class="glass-card p-6">
+        <h3 class="text-base font-semibold text-white mb-4 flex items-center gap-2">📋 历史记录</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-slate-400 text-xs uppercase tracking-wide border-b border-white/10">
+                        <th class="text-left py-3 px-4">日期</th>
+                        <th class="text-right py-3 px-4">体重 (kg)</th>
+                        <th class="text-right py-3 px-4">变化</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in range(records|length -1, -1, -1) %}
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                        <td class="py-3 px-4 text-slate-300">{{ records[i].record_date.strftime('%Y-%m-%d') }}</td>
+                        <td class="py-3 px-4 text-right font-semibold text-white">{{ "%.1f"|format(records[i].weight) }}
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            {% if i > 0 %}
+                            {% set diff = records[i].weight - records[i-1].weight %}
+                            <span
+                                class="{% if diff > 0 %}text-rose-400{% elif diff < 0 %}text-green-400{% else %}text-slate-400{% endif %}">
+                                {{ "%+.1f"|format(diff) }}
+                            </span>
+                            {% else %}
+                            <span class="text-slate-500">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not records %}
+            <p class="text-center text-slate-500 py-8">暂无体重记录，快来记录你的第一次体重吧！</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Hidden data element for JS to read, bypassing IDE JS formatters that break Jinja tags -->
+<div id="chartData" data-dates="{{ chart_dates | tojson | forceescape }}"
+    data-weights="{{ chart_weights | tojson | forceescape }}" style="display:none;">
+</div>
+
+<script>
+    // Render ECharts weight chart
+    const chartDom = document.getElementById('weightChart');
+    const myChart = echarts.init(chartDom, 'dark');
+
+    const chartDataEl = document.getElementById('chartData');
+    const dates = JSON.parse(chartDataEl.dataset.dates);
+    const weights = JSON.parse(chartDataEl.dataset.weights);
+
+    const option = {
+        backgroundColor: 'transparent',
+        tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'rgba(15,23,42,0.9)',
+            borderColor: 'rgba(34,197,94,0.3)',
+            textStyle: { color: '#f1f5f9', fontSize: 13 },
+            formatter: '{b}<br />体重: <b>{c} kg</b>'
+        },
+        grid: { left: '3%', right: '4%', bottom: '8%', top: '8%', containLabel: true },
+        xAxis: {
+            type: 'category',
+            data: dates,
+            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+            axisLabel: { color: '#94a3b8', fontSize: 11 },
+            axisTick: { show: false }
+        },
+        yAxis: {
+            type: 'value',
+            min: function (v) { return Math.floor(v.min - 2); },
+            max: function (v) { return Math.ceil(v.max + 2); },
+            axisLine: { show: false },
+            axisLabel: { color: '#94a3b8', fontSize: 11, formatter: '{value} kg' },
+            splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
+        },
+        toolbox: {
+            right: 10, top: 0,
+            feature: {
+                saveAsImage: { title: '保存图片', iconStyle: { borderColor: '#94a3b8' } }
+            }
+        },
+        series: [{
+            data: weights,
+            type: 'line',
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 8,
+            lineStyle: { color: '#22c55e', width: 3 },
+            itemStyle: { color: '#22c55e', borderColor: '#0f172a', borderWidth: 2 },
+            areaStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(34,197,94,0.3)' },
+                    { offset: 1, color: 'rgba(34,197,94,0.02)' }
+                ])
+            }
+        }]
+    };
+    myChart.setOption(option);
+    window.addEventListener('resize', () => myChart.resize());
+
+    async function saveWeight() {
+        const weight = parseFloat(document.getElementById('weightInput').value);
+        const dateVal = document.getElementById('weightDate').value;
+        if (!weight || weight <= 0) { showToast('请输入有效体重', 'warning'); return; } const result = await apiPost('/weight/add', {
+            weight: weight, record_date: dateVal
+        }); if (result.success) {
+            showToast(result.updated ? '体重已更新' : '体重已记录'
+                , 'success'); setTimeout(() => location.reload(), 800);
+        } else {
+            showToast(result.message || '保存失败', 'error');
+        }
+    }
+
+    async function getAnalysis() {
+        const btn = document.getElementById('analysisBtn');
+        const content = document.getElementById('analysisContent');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="animate-spin inline-block">⏳</span> 分析中...';
+        content.innerHTML = '<p class="text-slate-400 animate-pulse">AI 营养师正在分析你的健康数据...</p>';
+
+        try {
+            const res = await fetch('/weight/analysis');
+            const data = await res.json();
+            if (data.success) {
+                content.innerHTML = `<p class="text-slate-200">${data.analysis}</p>`;
+            } else {
+                content.innerHTML = '<p class="text-rose-400">分析失败，请稍后重试</p>';
+            }
+        } catch (e) {
+            content.innerHTML = '<p class="text-rose-400">网络错误，请稍后重试</p>';
+        }
+        btn.disabled = false;
+        btn.innerHTML = '获取 AI 分析';
+    }
+</script>
+{% endblock %}
