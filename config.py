@@ -4,8 +4,8 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'fitness-app-secret-key-2024'
     
     # MySQL Database (port 3306 for Baota)
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://fitness:PMTMmMRpYRx343kh@127.0.0.1:3306/fitness?charset=utf8mb4'
-    # SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:123456@127.0.0.1:3308/fitness_app?charset=utf8mb4'
+    #SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://fitness:PMTMmMRpYRx343kh@127.0.0.1:3306/fitness?charset=utf8mb4'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:123456@127.0.0.1:3308/fitness_app?charset=utf8mb4'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,

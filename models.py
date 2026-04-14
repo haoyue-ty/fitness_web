@@ -19,6 +19,8 @@ class User(UserMixin, db.Model):
     weight_kg = db.Column(db.Float, nullable=True)    # kg
     age = db.Column(db.Integer, nullable=True)
     gender = db.Column(db.String(10), nullable=True)  # 'male' or 'female'
+    avatar = db.Column(db.String(200), nullable=True) # avatar filename
+
     
     diet_records = db.relationship('DietRecord', backref='user', lazy=True)
     weight_records = db.relationship('WeightRecord', backref='user', lazy=True)

@@ -1,164 +1,788 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
 {% block title %}我的 - 健身达人{% endblock %}
 
 {% block extra_styles %}
 <style>
-    .profile-avatar {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #22c55e, #16a34a);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-        font-weight: 700;
-        color: white;
-        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
-    }
+  /* ── Profile hero banner ── */
+  .profile-banner {
+    background: linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(139,92,246,0.12) 50%, rgba(249,115,22,0.1) 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .profile-banner::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
 
-    .gender-btn {
-        flex: 1;
-        padding: 10px;
-        border-radius: 10px;
-        cursor: pointer;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(255, 255, 255, 0.05);
-        color: #94a3b8;
-        font-weight: 500;
-        text-align: center;
-        transition: all .25s ease;
-    }
+  /* ── Avatar ring ── */
+  .avatar-ring {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22c55e, #4ade80, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; font-weight: 700; color: white;
+    box-shadow: 0 0 0 4px rgba(34,197,94,0.25), 0 8px 32px rgba(0,0,0,0.3);
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: box-shadow 0.25s ease;
+  }
+  .avatar-ring:hover {
+    box-shadow: 0 0 0 4px rgba(34,197,94,0.55), 0 8px 32px rgba(0,0,0,0.45);
+  }
+  .avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.52);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 50%;
+  }
+  .avatar-ring:hover .avatar-overlay { opacity: 1; }
+  .avatar-overlay svg { width: 20px; height: 20px; color: white; }
+  .avatar-overlay .ov-text { font-size: 9px; color: rgba(255,255,255,0.9); font-weight: 600; letter-spacing: 0.05em; }
+  .avatar-ring.uploading .avatar-overlay { opacity: 1; background: rgba(0,0,0,0.65); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin-icon { animation: spin 0.75s linear infinite; }
 
-    .gender-btn.active {
-        background: rgba(34, 197, 94, 0.2);
-        border-color: #22c55e;
-        color: #4ade80;
-    }
+  /* ── Metrics display cards ── */
+  .metric-display {
+    background: rgba(30,41,59,0.6);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 18px 20px;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .metric-display::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--metric-color, rgba(34,197,94,0.5));
+    border-radius: 0 0 14px 14px;
+    transition: height 0.3s ease;
+  }
+  .metric-display:hover::after { height: 3px; }
+  .metric-display:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 10px 36px rgba(0,0,0,0.25);
+  }
 
-    .bmr-badge {
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #22c55e, #4ade80, #86efac);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
+  /* ── BMR result panel ── */
+  .bmr-panel {
+    background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(74,222,128,0.06));
+    border: 1px solid rgba(34,197,94,0.25);
+    border-radius: 20px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .bmr-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top right, rgba(34,197,94,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .bmr-value {
+    font-size: 52px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #22c55e, #4ade80);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    transition: all 0.4s ease;
+  }
+  .bmr-value.updated {
+    animation: bmrPop 0.5s ease forwards;
+  }
+  @keyframes bmrPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  /* ── Calorie tiers ── */
+  .calorie-tier {
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+  }
+  .calorie-tier:hover { border-color: rgba(255,255,255,0.1); }
+
+  /* ── Form section ── */
+  .form-section {
+    background: rgba(30,41,59,0.7);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px;
+    padding: 28px;
+  }
+
+  .input-group {
+    position: relative;
+  }
+  .input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .input-group .unit {
+    position: absolute;
+    right: 14px; bottom: 13px;
+    font-size: 13px;
+    color: #475569;
+    pointer-events: none;
+  }
+
+  /* ── Gender toggle ── */
+  .gender-toggle {
+    display: flex;
+    gap: 8px;
+  }
+  .gender-btn {
+    flex: 1;
+    padding: 11px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .gender-btn:hover { border-color: rgba(255,255,255,0.2); color: #94a3b8; }
+  .gender-btn.active-male {
+    background: rgba(59,130,246,0.12);
+    border-color: rgba(59,130,246,0.4);
+    color: #60a5fa;
+  }
+  .gender-btn.active-female {
+    background: rgba(244,114,182,0.12);
+    border-color: rgba(244,114,182,0.4);
+    color: #f472b6;
+  }
+
+  /* ── Progress ring ── */
+  .progress-ring-wrap {
+    position: relative;
+    width: 110px; height: 110px;
+    flex-shrink: 0;
+  }
+  .progress-ring-wrap svg { transform: rotate(-90deg); }
+  .progress-ring-label {
+    position: absolute;
+    inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 11px; color: #64748b; text-align: center;
+  }
+  .progress-ring-label span { font-size: 20px; font-weight: 700; color: #4ade80; line-height: 1; }
+
+  /* ── Activity-based calorie table ── */
+  .activity-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 13px;
+    gap: 8px;
+  }
+  .activity-row:last-child { border-bottom: none; }
+  .activity-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── BMI badge ── */
+  .bmi-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* ── Save button pulse ── */
+  #save-btn:not(:disabled):hover {
+    box-shadow: 0 8px 28px rgba(34,197,94,0.4);
+    transform: translateY(-2px);
+  }
+  #save-btn:active { transform: scale(0.97); }
+
+  /* ── Responsive tweaks ── */
+  @media (max-width: 640px) {
+    .bmr-value { font-size: 40px; }
+    .profile-banner { padding: 20px; }
+    .form-section { padding: 20px; }
+    .bmr-panel { padding: 20px; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="max-w-xl mx-auto space-y-6 fade-in">
+<div class="max-w-4xl mx-auto space-y-6 fade-in">
 
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-        <div>
-            <h2 class="text-2xl font-bold text-slate-100">我的</h2>
-            <p class="text-sm text-slate-400 mt-1">管理个人信息与身体数据</p>
+  <!-- ══════════════════ PROFILE BANNER ══════════════════ -->
+  <div class="profile-banner">
+    <div class="flex items-center gap-4 flex-wrap">
+      <!-- Clickable avatar for upload -->
+      <div class="avatar-ring" id="profile-avatar-ring"
+           onclick="document.getElementById('avatar-input').click()"
+           title="点击更换头像">
+        {% if current_user.avatar %}
+        <img id="profile-avatar-img"
+             src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar) }}"
+             alt="avatar" class="w-full h-full object-cover">
+        {% else %}
+        <span id="profile-avatar-initial">{{ current_user.username[0].upper() }}</span>
+        {% endif %}
+        <!-- Hover / loading overlay -->
+        <div class="avatar-overlay" id="avatar-overlay">
+          <svg id="overlay-cam-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span class="ov-text" id="overlay-txt">更换头像</span>
         </div>
-        <a href="{{ url_for('settings') }}" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10
-              text-slate-300 hover:bg-white/10 hover:text-slate-100 transition-all text-sm font-medium">
-            ⚙️ 设置
-        </a>
+      </div>
+      <input type="file" id="avatar-input" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden" onchange="uploadAvatar(this)">
+      <div class="flex-1 min-w-0">
+        <h2 class="text-2xl font-bold text-white">{{ current_user.username }}</h2>
+        <p class="text-slate-400 text-sm mt-0.5">{{ current_user.email or '未绑定邮箱' }}</p>
+        <p class="text-slate-500 text-xs mt-1">加入于 {{ current_user.created_at.strftime('%Y年%m月%d日') }}</p>
+      </div>
+      <!-- Quick metric chips -->
+      <div class="flex gap-2 flex-wrap mt-2 sm:mt-0">
+        {% if current_user.height %}
+        <span class="px-3 py-1 bg-blue-500/10 border border-blue-500/25 text-blue-400 text-xs font-semibold rounded-full">
+          {{ current_user.height | int }} cm
+        </span>
+        {% endif %}
+        {% if current_user.weight_kg %}
+        <span class="px-3 py-1 bg-green-500/10 border border-green-500/25 text-green-400 text-xs font-semibold rounded-full">
+          {{ current_user.weight_kg }} kg
+        </span>
+        {% endif %}
+        {% if current_user.age %}
+        <span class="px-3 py-1 bg-purple-500/10 border border-purple-500/25 text-purple-400 text-xs font-semibold rounded-full">
+          {{ current_user.age }} 岁
+        </span>
+        {% endif %}
+        {% if current_user.gender %}
+        <span class="px-3 py-1 {% if current_user.gender == 'male' %}bg-sky-500/10 border-sky-500/25 text-sky-400{% else %}bg-pink-500/10 border-pink-500/25 text-pink-400{% endif %} border text-xs font-semibold rounded-full">
+          {{ '男' if current_user.gender == 'male' else '女' }}
+        </span>
+        {% endif %}
+      </div>
     </div>
+  </div>
 
-    <!-- Avatar & Name -->
-    <div class="glass-card p-6 flex items-center gap-5">
-        <div class="profile-avatar">{{ current_user.username[0].upper() }}</div>
-        <div>
-            <p class="text-xl font-bold text-slate-100">{{ current_user.username }}</p>
-            <p class="text-sm text-slate-400">{{ current_user.email or '未绑定邮箱' }}</p>
-            <p class="text-xs text-slate-500 mt-1">注册于 {{ current_user.created_at.strftime('%Y-%m-%d') }}</p>
-        </div>
-    </div>
+  <!-- ══════════════════ MAIN GRID ══════════════════ -->
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-    <!-- BMR Display -->
-    <div class="glass-card p-6 text-center">
-        <p class="text-slate-400 text-sm mb-1">基础代谢率 (BMR)</p>
-        <p class="bmr-badge" id="bmr-display">
-            {% if bmr %}{{ bmr }} <span class="text-xl">kcal/天</span>{% else %}—{% endif %}
-        </p>
-        <p class="text-xs text-slate-500 mt-2">Mifflin-St Jeor 公式计算 · 填写下方信息后实时更新</p>
-    </div>
+    <!-- ── LEFT: Edit Form ── -->
+    <div class="lg:col-span-2 space-y-5">
 
-    <!-- Profile Form -->
-    <div class="glass-card p-6">
-        <h3 class="text-base font-semibold text-slate-200 mb-5">身体信息</h3>
-        <form id="profile-form" action="{{ url_for('profile_update') }}" method="POST" class="space-y-5">
+      <div class="form-section">
+        <h3 class="text-base font-semibold text-slate-100 mb-5 flex items-center gap-2">
+          <svg class="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+          身体信息登记
+        </h3>
 
-            <!-- Height & Weight -->
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs text-slate-400 mb-2">身高 (cm)</label>
-                    <input type="number" name="height" id="inp-height" step="0.1" min="50" max="250"
-                        value="{{ current_user.height or '' }}" placeholder="例如 170" class="input-field" />
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-2">体重 (kg)</label>
-                    <input type="number" name="weight_kg" id="inp-weight" step="0.1" min="10" max="500"
-                        value="{{ current_user.weight_kg or '' }}" placeholder="例如 65" class="input-field" />
-                </div>
+        <form id="profile-form" action="{{ url_for('profile_update') }}" method="post">
+          <div class="space-y-4">
+
+            <!-- Weight -->
+            <div class="input-group">
+              <label for="weight_kg">体重</label>
+              <input
+                type="number" id="weight_kg" name="weight_kg" step="0.1" min="20" max="300"
+                value="{{ current_user.weight_kg or '' }}"
+                placeholder="请输入体重"
+                class="input-field pr-12"
+                oninput="liveCalc()"
+              >
+              <span class="unit">kg</span>
+            </div>
+
+            <!-- Height -->
+            <div class="input-group">
+              <label for="height">身高</label>
+              <input
+                type="number" id="height" name="height" step="0.1" min="50" max="250"
+                value="{{ current_user.height or '' }}"
+                placeholder="请输入身高"
+                class="input-field pr-12"
+                oninput="liveCalc()"
+              >
+              <span class="unit">cm</span>
             </div>
 
             <!-- Age -->
-            <div>
-                <label class="block text-xs text-slate-400 mb-2">年龄</label>
-                <input type="number" name="age" id="inp-age" min="1" max="120" value="{{ current_user.age or '' }}"
-                    placeholder="例如 25" class="input-field" />
+            <div class="input-group">
+              <label for="age">年龄</label>
+              <input
+                type="number" id="age" name="age" step="1" min="1" max="120"
+                value="{{ current_user.age or '' }}"
+                placeholder="请输入年龄"
+                class="input-field pr-12"
+                oninput="liveCalc()"
+              >
+              <span class="unit">岁</span>
             </div>
 
             <!-- Gender -->
-            <div>
-                <label class="block text-xs text-slate-400 mb-2">性别</label>
-                <input type="hidden" name="gender" id="inp-gender" value="{{ current_user.gender or '' }}" />
-                <div class="flex gap-3">
-                    <button type="button" onclick="setGender('male')"
-                        class="gender-btn {% if current_user.gender == 'male' %}active{% endif %}" id="btn-male">
-                        👨 男
-                    </button>
-                    <button type="button" onclick="setGender('female')"
-                        class="gender-btn {% if current_user.gender == 'female' %}active{% endif %}" id="btn-female">
-                        👩 女
-                    </button>
-                </div>
+            <div class="input-group">
+              <label>性别</label>
+              <input type="hidden" id="gender" name="gender" value="{{ current_user.gender or '' }}">
+              <div class="gender-toggle">
+                <button type="button" id="btn-male"
+                  class="gender-btn {% if current_user.gender == 'male' %}active-male{% endif %}"
+                  onclick="setGender('male')">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <circle cx="10" cy="10" r="7"/><path stroke-linecap="round" d="M15 4h5m0 0v5m0-5l-7 7"/>
+                  </svg>
+                  男
+                </button>
+                <button type="button" id="btn-female"
+                  class="gender-btn {% if current_user.gender == 'female' %}active-female{% endif %}"
+                  onclick="setGender('female')">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="8" r="5"/><path stroke-linecap="round" d="M12 13v8m-3-3h6"/>
+                  </svg>
+                  女
+                </button>
+              </div>
             </div>
 
-            <button type="submit" class="btn-primary w-full justify-center">
-                💾 保存信息
-            </button>
+          </div>
+
+          <!-- Save button -->
+          <button id="save-btn" type="submit"
+            class="btn-primary w-full mt-6 justify-center transition-all duration-250">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            保存信息
+          </button>
         </form>
+      </div>
+
+      <!-- Quick metric cards -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="metric-display" style="--metric-color: #22c55e;">
+          <p class="text-xs text-slate-500 mb-1">当前体重</p>
+          <p class="text-xl font-bold text-slate-100">
+            <span id="mc-weight">{{ current_user.weight_kg or '—' }}</span>
+            <span class="text-sm font-normal text-slate-500 ml-1">kg</span>
+          </p>
+        </div>
+        <div class="metric-display" style="--metric-color: #3b82f6;">
+          <p class="text-xs text-slate-500 mb-1">身高</p>
+          <p class="text-xl font-bold text-slate-100">
+            <span id="mc-height">{{ current_user.height | int if current_user.height else '—' }}</span>
+            <span class="text-sm font-normal text-slate-500 ml-1">cm</span>
+          </p>
+        </div>
+        <div class="metric-display" style="--metric-color: #8b5cf6;">
+          <p class="text-xs text-slate-500 mb-1">BMI</p>
+          <p class="text-xl font-bold" id="mc-bmi">
+            {% if current_user.weight_kg and current_user.height %}
+              {{ '%.1f'|format(current_user.weight_kg / ((current_user.height/100)**2)) }}
+            {% else %}—{% endif %}
+          </p>
+        </div>
+        <div class="metric-display" style="--metric-color: #f97316;">
+          <p class="text-xs text-slate-500 mb-1">年龄</p>
+          <p class="text-xl font-bold text-slate-100">
+            <span id="mc-age">{{ current_user.age or '—' }}</span>
+            <span class="text-sm font-normal text-slate-500 ml-1">岁</span>
+          </p>
+        </div>
+      </div>
+
     </div>
 
+    <!-- ── RIGHT: BMR Results ── -->
+    <div class="lg:col-span-3 space-y-5">
+
+      <!-- BMR main panel -->
+      <div class="bmr-panel">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <p class="text-xs font-semibold text-green-400/80 uppercase tracking-widest mb-1">基础代谢率 (BMR)</p>
+            <div class="flex items-end gap-2">
+              <p class="bmr-value" id="bmr-display">
+                {{ bmr if bmr else '—' }}
+              </p>
+              <span class="text-slate-400 text-sm mb-2" id="bmr-unit">{{ 'kcal/天' if bmr else '' }}</span>
+            </div>
+            <p class="text-slate-500 text-xs mt-2" id="bmr-formula-note">
+              {% if bmr %}
+              Mifflin-St Jeor 公式 · 维持基本生命活动所需热量
+              {% else %}
+              请填写身体信息以计算您的基础代谢率
+              {% endif %}
+            </p>
+          </div>
+
+          <!-- Progress ring (% of 2000 kcal reference) -->
+          <div class="progress-ring-wrap" id="ring-wrap" style="{% if not bmr %}opacity:0.3{% endif %}">
+            <svg width="110" height="110" viewBox="0 0 110 110">
+              <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+              <circle cx="55" cy="55" r="46" fill="none" stroke="url(#ringGrad)" stroke-width="8"
+                stroke-linecap="round"
+                stroke-dasharray="289"
+                stroke-dashoffset="{{ 289 - (289 * [bmr, 2000]|min / 2000)|int if bmr else 289 }}"
+                id="ring-circle"
+                style="transition: stroke-dashoffset 0.6s ease;"
+              />
+              <defs>
+                <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#22c55e"/>
+                  <stop offset="100%" stop-color="#4ade80"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="progress-ring-label">
+              <span id="ring-pct">{{ '%d'|format(bmr / 2000 * 100) if bmr else '0' }}%</span>
+              <p>相对<br>2000基准</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- BMI result row -->
+        <div class="mt-4 pt-4 border-t border-white/5 flex items-center gap-3 flex-wrap">
+          <p class="text-xs text-slate-500">BMI 指数</p>
+          <span class="bmi-badge" id="bmi-badge">
+            {% if current_user.weight_kg and current_user.height %}
+              {% set bmi_val = current_user.weight_kg / ((current_user.height/100)**2) %}
+              {% if bmi_val < 18.5 %}
+                <span style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;">偏瘦 {{ '%.1f'|format(bmi_val) }}</span>
+              {% elif bmi_val < 24 %}
+                <span style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#4ade80;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;">正常 {{ '%.1f'|format(bmi_val) }}</span>
+              {% elif bmi_val < 28 %}
+                <span style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;">超重 {{ '%.1f'|format(bmi_val) }}</span>
+              {% else %}
+                <span style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;">肥胖 {{ '%.1f'|format(bmi_val) }}</span>
+              {% endif %}
+            {% else %}
+              <span style="background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.2);color:#64748b;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;">— 待计算</span>
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
+      <!-- Activity-based calorie needs -->
+      <div class="form-section">
+        <h3 class="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          每日消耗热量推荐
+        </h3>
+        <p class="text-xs text-slate-500 mb-4">基于 BMR × 活动系数 (Harris-Benedict 公式)</p>
+
+        <div class="space-y-1" id="activity-table">
+          <div class="activity-row">
+            <div class="flex items-center gap-2">
+              <div class="activity-dot" style="background:#94a3b8;"></div>
+              <span class="text-slate-400">久坐（几乎不运动）</span>
+            </div>
+            <span class="font-semibold text-slate-300" id="act-sedentary">—</span>
+          </div>
+          <div class="activity-row">
+            <div class="flex items-center gap-2">
+              <div class="activity-dot" style="background:#4ade80;"></div>
+              <span class="text-slate-400">轻度活动（每周1-3次）</span>
+            </div>
+            <span class="font-semibold text-green-400" id="act-light">—</span>
+          </div>
+          <div class="activity-row">
+            <div class="flex items-center gap-2">
+              <div class="activity-dot" style="background:#fb923c;"></div>
+              <span class="text-slate-400">中度活动（每周3-5次）</span>
+            </div>
+            <span class="font-semibold text-orange-400" id="act-moderate">—</span>
+          </div>
+          <div class="activity-row">
+            <div class="flex items-center gap-2">
+              <div class="activity-dot" style="background:#c084fc;"></div>
+              <span class="text-slate-400">高强度（每周6-7次）</span>
+            </div>
+            <span class="font-semibold text-purple-400" id="act-heavy">—</span>
+          </div>
+          <div class="activity-row">
+            <div class="flex items-center gap-2">
+              <div class="activity-dot" style="background:#f87171;"></div>
+              <span class="text-slate-400">运动员（每天高强度）</span>
+            </div>
+            <span class="font-semibold text-red-400" id="act-athlete">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Goal cards row -->
+      <div class="grid grid-cols-3 gap-3">
+        <div class="glass-card p-4 text-center">
+          <p class="text-xs text-slate-500 mb-1">减脂目标</p>
+          <p class="text-lg font-bold text-blue-400" id="goal-loss">—</p>
+          <p class="text-[10px] text-slate-600 mt-0.5">kcal/天</p>
+        </div>
+        <div class="glass-card p-4 text-center">
+          <p class="text-xs text-slate-500 mb-1">维持体重</p>
+          <p class="text-lg font-bold text-green-400" id="goal-maintain">—</p>
+          <p class="text-[10px] text-slate-600 mt-0.5">kcal/天</p>
+        </div>
+        <div class="glass-card p-4 text-center">
+          <p class="text-xs text-slate-500 mb-1">增肌目标</p>
+          <p class="text-lg font-bold text-orange-400" id="goal-gain">—</p>
+          <p class="text-[10px] text-slate-600 mt-0.5">kcal/天</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    function setGender(g) {
-        document.getElementById('inp-gender').value = g;
-        document.getElementById('btn-male').classList.toggle('active', g === 'male');
-        document.getElementById('btn-female').classList.toggle('active', g === 'female');
-        recalcBMR();
+  /* ──────────────── State ──────────────── */
+  let currentGender = '{{ current_user.gender or "" }}';
+
+  /* ──────────────── Avatar upload ──────────────── */
+  async function uploadAvatar(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+
+    // Client-side validation
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      showToast('仅支持 JPG / PNG / GIF / WebP 格式', 'error');
+      input.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('图片不能超过 5 MB', 'error');
+      input.value = '';
+      return;
     }
 
-    function recalcBMR() {
-        const h = parseFloat(document.getElementById('inp-height').value);
-        const w = parseFloat(document.getElementById('inp-weight').value);
-        const a = parseInt(document.getElementById('inp-age').value);
-        const g = document.getElementById('inp-gender').value;
-        const el = document.getElementById('bmr-display');
+    // Show loading state on avatar ring
+    const ring    = document.getElementById('profile-avatar-ring');
+    const overlay = document.getElementById('avatar-overlay');
+    const ovTxt   = document.getElementById('overlay-txt');
+    const ovIcon  = document.getElementById('overlay-cam-icon');
+    ring.classList.add('uploading');
+    ovTxt.textContent = '上传中…';
+    ovIcon.classList.add('spin-icon');
 
-        if (h && w && a && g) {
-            let base = 10 * w + 6.25 * h - 5 * a;
-            let bmr = g === 'male' ? base + 5 : base - 161;
-            el.innerHTML = `${bmr.toFixed(1)} <span class="text-xl">kcal/天</span>`;
-        } else {
-            el.textContent = '—';
+    // Upload via FormData
+    const fd = new FormData();
+    fd.append('avatar', file);
+
+    try {
+      const res  = await fetch('/profile/upload-avatar', { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (data.success) {
+        const url = data.avatar_url + '?t=' + Date.now(); // bust cache
+
+        // ── Update profile banner avatar ──
+        let img = document.getElementById('profile-avatar-img');
+        const initial = document.getElementById('profile-avatar-initial');
+        if (!img) {
+          // first time: remove the initial letter span and create img
+          if (initial) initial.remove();
+          img = document.createElement('img');
+          img.id = 'profile-avatar-img';
+          img.alt = 'avatar';
+          img.className = 'w-full h-full object-cover';
+          ring.insertBefore(img, overlay);
         }
+        img.src = url;
+
+        // ── Update sidebar small avatar ──
+        const sidebarEl = document.getElementById('sidebar-avatar');
+        if (sidebarEl) {
+          sidebarEl.innerHTML = `<img src="${url}" alt="avatar" class="w-full h-full object-cover" style="border-radius:50%">`;
+        }
+
+        // ── Update mobile header avatar ──
+        const mobileEl = document.getElementById('mobile-header-avatar');
+        if (mobileEl) {
+          mobileEl.innerHTML = `<img src="${url}" alt="avatar" class="w-full h-full object-cover" style="border-radius:50%">`;
+        }
+
+        showToast('头像更新成功！', 'success');
+      } else {
+        showToast(data.message || '上传失败', 'error');
+      }
+    } catch (e) {
+      showToast('网络错误，请重试', 'error');
+    } finally {
+      // Restore ring state
+      ring.classList.remove('uploading');
+      ovTxt.textContent = '更换头像';
+      ovIcon.classList.remove('spin-icon');
+      input.value = '';
+    }
+  }
+
+
+
+  /* ──────────────── Gender toggle ──────────────── */
+  function setGender(g) {
+    currentGender = g;
+    document.getElementById('gender').value = g;
+    const btnMale = document.getElementById('btn-male');
+    const btnFemale = document.getElementById('btn-female');
+    btnMale.className = 'gender-btn' + (g === 'male' ? ' active-male' : '');
+    btnFemale.className = 'gender-btn' + (g === 'female' ? ' active-female' : '');
+    liveCalc();
+  }
+
+  /* ──────────────── BMR calculation (Mifflin-St Jeor) ──────────────── */
+  function calcBMR(weight, height, age, gender) {
+    if (!weight || !height || !age || !gender) return null;
+    const base = 10 * weight + 6.25 * height - 5 * age;
+    return Math.round(gender === 'male' ? base + 5 : base - 161);
+  }
+
+  function calcBMI(weight, height) {
+    if (!weight || !height) return null;
+    return weight / ((height / 100) ** 2);
+  }
+
+  function bmiLabel(bmi) {
+    if (bmi < 18.5) return { text: '偏瘦', color: '#60a5fa', bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.3)' };
+    if (bmi < 24)   return { text: '正常', color: '#4ade80', bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.3)' };
+    if (bmi < 28)   return { text: '超重', color: '#fbbf24', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.3)' };
+    return { text: '肥胖', color: '#f87171', bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.3)' };
+  }
+
+  /* ──────────────── Live recalculation ──────────────── */
+  function liveCalc() {
+    const weight = parseFloat(document.getElementById('weight_kg').value);
+    const height = parseFloat(document.getElementById('height').value);
+    const age    = parseFloat(document.getElementById('age').value);
+    const gender = currentGender;
+
+    const bmr = calcBMR(weight, height, age, gender);
+    const bmi = calcBMI(weight, height);
+
+    // ── BMR display ──
+    const bmrEl = document.getElementById('bmr-display');
+    if (bmr) {
+      if (bmrEl.textContent.trim() !== String(bmr)) {
+        bmrEl.classList.remove('updated');
+        void bmrEl.offsetWidth;
+        bmrEl.classList.add('updated');
+      }
+      bmrEl.textContent = bmr;
+      document.getElementById('bmr-unit').textContent = 'kcal/天';
+      document.getElementById('bmr-formula-note').textContent = 'Mifflin-St Jeor 公式 · 维持基本生命活动所需热量';
+    } else {
+      bmrEl.textContent = '—';
+      document.getElementById('bmr-unit').textContent = '';
+      document.getElementById('bmr-formula-note').textContent = '请填写完整的身体信息以计算基础代谢率';
     }
 
-    ['inp-height', 'inp-weight', 'inp-age'].forEach(id => {
-        document.getElementById(id).addEventListener('input', recalcBMR);
+    // ── Progress ring ──
+    const ring = document.getElementById('ring-circle');
+    const ringPct = document.getElementById('ring-pct');
+    const ringWrap = document.getElementById('ring-wrap');
+    if (bmr) {
+      const pct = Math.min(bmr / 2000, 1);
+      ring.setAttribute('stroke-dashoffset', Math.round(289 - 289 * pct));
+      ringPct.textContent = Math.round(pct * 100) + '%';
+      ringWrap.style.opacity = '1';
+    } else {
+      ring.setAttribute('stroke-dashoffset', '289');
+      ringPct.textContent = '0%';
+      ringWrap.style.opacity = '0.3';
+    }
+
+    // ── BMI ──
+    const mcBmi = document.getElementById('mc-bmi');
+    const bmiEls = document.getElementById('bmi-badge');
+    if (bmi) {
+      const { text, color, bg, border } = bmiLabel(bmi);
+      const bmiStr = bmi.toFixed(1);
+      mcBmi.textContent = bmiStr;
+      mcBmi.style.color = color;
+      bmiEls.innerHTML = `<span style="background:${bg};border:1px solid ${border};color:${color};padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;">${text} ${bmiStr}</span>`;
+    } else {
+      mcBmi.textContent = '—';
+      mcBmi.style.color = '#94a3b8';
+      bmiEls.innerHTML = `<span style="background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.2);color:#64748b;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;">— 待计算</span>`;
+    }
+
+    // ── Metric cards ──
+    document.getElementById('mc-weight').textContent = weight || '—';
+    document.getElementById('mc-height').textContent = height ? Math.round(height) : '—';
+    document.getElementById('mc-age').textContent = age || '—';
+
+    // ── Activity table (Harris-Benedict multipliers) ──
+    const factors = {
+      sedentary: 1.2, light: 1.375, moderate: 1.55, heavy: 1.725, athlete: 1.9
+    };
+    const ids = ['act-sedentary', 'act-light', 'act-moderate', 'act-heavy', 'act-athlete'];
+    const keys = ['sedentary', 'light', 'moderate', 'heavy', 'athlete'];
+    keys.forEach((k, i) => {
+      document.getElementById(ids[i]).textContent = bmr ? Math.round(bmr * factors[k]) + ' kcal' : '—';
     });
+
+    // ── Goal cards ── (light activity as maintenance base)
+    const maintain = bmr ? Math.round(bmr * 1.375) : null;
+    document.getElementById('goal-loss').textContent = maintain ? maintain - 500 : '—';
+    document.getElementById('goal-maintain').textContent = maintain || '—';
+    document.getElementById('goal-gain').textContent = maintain ? maintain + 300 : '—';
+  }
+
+  // Run on load with existing data
+  document.addEventListener('DOMContentLoaded', liveCalc);
 </script>
 {% endblock %}

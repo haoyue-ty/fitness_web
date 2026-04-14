@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import uuid
 from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -15,7 +16,11 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # Ensure upload folder exists
-os.makedirs(app.config.get('UPLOAD_FOLDER', 'static/uploads'), exist_ok=True)
+UPLOAD_FOLDER = os.path.join('static', 'uploads')
+AVATAR_FOLDER = os.path.join(UPLOAD_FOLDER, 'avatars')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(AVATAR_FOLDER, exist_ok=True)
+ALLOWED_IMAGE_EXTS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
 
 # Initialize database
 db.init_app(app)
@@ -212,7 +217,7 @@ def dashboard():
     ).first()
     exercise_burn = today_exercise.calories_burned if today_exercise else 0
     
-    bmr = app.config['DEFAULT_BMR']
+    bmr = get_user_bmr(current_user)
     calorie_diff = total_intake - (bmr + exercise_burn)
     
     # Latest weight
@@ -266,7 +271,7 @@ def diet():
     ).first()
     exercise_burn = today_exercise.calories_burned if today_exercise else 0
     
-    bmr = app.config['DEFAULT_BMR']
+    bmr = get_user_bmr(current_user)
     calorie_diff = total_calories - (bmr + exercise_burn)
     
     return render_template('diet.html',
@@ -423,6 +428,13 @@ def weight_add():
         return jsonify({'success': True, 'record': record.to_dict(), 'updated': False})
 
 
+@app.route('/weight/clear', methods=['POST'])
+@login_required
+def weight_clear():
+    WeightRecord.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
+    return jsonify({'success': True, 'message': '体重记录已清空'})
+
 @app.route('/weight/analysis')
 @login_required
 def weight_analysis():
@@ -444,7 +456,7 @@ def weight_analysis():
         total_intake = sum(r.calories for r in diet_records)
         exercise = ExerciseRecord.query.filter_by(user_id=current_user.id, record_date=day).first()
         exercise_burn = exercise.calories_burned if exercise else 0
-        bmr = app.config['DEFAULT_BMR']
+        bmr = get_user_bmr(current_user)
         calorie_diff = total_intake - (bmr + exercise_burn)
         if total_intake > 0:  # Only include days with data
             calorie_data.append({'date': day.strftime('%Y-%m-%d'), 'calorie_diff': calorie_diff})
@@ -502,6 +514,60 @@ def checkin_do():
     return jsonify({'success': True, 'message': '打卡成功！坚持加油 💪'})
 
 
+@app.route('/checkin/day/<date_str>')
+@login_required
+def checkin_day_detail(date_str):
+    """Return calorie intake & burn data for a given day (YYYY-MM-DD)."""
+    try:
+        day = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'success': False, 'message': '日期格式错误'}), 400
+
+    # Diet records
+    diet_records = DietRecord.query.filter_by(
+        user_id=current_user.id, record_date=day
+    ).all()
+    total_intake = sum(r.calories for r in diet_records)
+
+    breakfast = [r.to_dict() for r in diet_records if r.meal_type == 'breakfast']
+    lunch     = [r.to_dict() for r in diet_records if r.meal_type == 'lunch']
+    dinner    = [r.to_dict() for r in diet_records if r.meal_type == 'dinner']
+
+    # Exercise
+    exercise = ExerciseRecord.query.filter_by(
+        user_id=current_user.id, record_date=day
+    ).first()
+    exercise_burn = exercise.calories_burned if exercise else 0
+    exercise_desc = exercise.description if exercise else ''
+
+    # BMR
+    bmr = get_user_bmr(current_user)
+    total_burn = bmr + exercise_burn
+    net = total_intake - total_burn
+
+    # Check-in status
+    checked = CheckInRecord.query.filter_by(
+        user_id=current_user.id, checkin_date=day
+    ).first() is not None
+
+    return jsonify({
+        'success': True,
+        'date': date_str,
+        'checked': checked,
+        'total_intake': round(total_intake, 1),
+        'bmr': round(bmr, 1),
+        'exercise_burn': round(exercise_burn, 1),
+        'total_burn': round(total_burn, 1),
+        'net': round(net, 1),
+        'exercise_desc': exercise_desc,
+        'breakfast': breakfast,
+        'lunch': lunch,
+        'dinner': dinner,
+    })
+
+
+
+
 # =====================
 # CHAT ROUTES
 # =====================
@@ -525,7 +591,7 @@ def chat_message():
 
 
 # =====================
-# PROFILE ROUTES
+# PROFILE & BMR HELPERS
 # =====================
 def calc_bmr(height, weight_kg, age, gender):
     """Mifflin-St Jeor BMR formula."""
@@ -533,6 +599,10 @@ def calc_bmr(height, weight_kg, age, gender):
         return None
     base = 10 * weight_kg + 6.25 * height - 5 * age
     return round(base + 5 if gender == 'male' else base - 161, 1)
+
+def get_user_bmr(user):
+    bmr = calc_bmr(user.height, user.weight_kg, user.age, user.gender)
+    return bmr if bmr is not None else app.config.get('DEFAULT_BMR', 1800)
 
 
 @app.route('/profile')
@@ -556,20 +626,78 @@ def profile_update():
         age = request.form.get('age', '').strip()
         gender = request.form.get('gender', '').strip()
 
+        # Query the actual User row so SQLAlchemy can track changes correctly
+        user = User.query.get(current_user.id)
+
         if height:
-            current_user.height = float(height)
+            user.height = float(height)
         if weight_kg:
-            current_user.weight_kg = float(weight_kg)
+            weight_val = float(weight_kg)
+            user.weight_kg = weight_val
+            # Automatically add/update a WeightRecord for today
+            today = date.today()
+            existing_weight = WeightRecord.query.filter_by(
+                user_id=user.id, record_date=today
+            ).first()
+            if existing_weight:
+                existing_weight.weight = weight_val
+            else:
+                new_weight = WeightRecord(
+                    user_id=user.id,
+                    weight=weight_val,
+                    record_date=today
+                )
+                db.session.add(new_weight)
         if age:
-            current_user.age = int(age)
+            user.age = int(age)
         if gender in ('male', 'female'):
-            current_user.gender = gender
+            user.gender = gender
 
         db.session.commit()
         flash('个人信息已更新！', 'success')
     except ValueError:
         flash('请输入有效数字', 'error')
     return redirect(url_for('profile'))
+
+
+@app.route('/profile/upload-avatar', methods=['POST'])
+@login_required
+def upload_avatar():
+    """Upload and save user avatar image."""
+    if 'avatar' not in request.files:
+        return jsonify({'success': False, 'message': '未选择文件'}), 400
+
+    file = request.files['avatar']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': '文件名为空'}), 400
+
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in ALLOWED_IMAGE_EXTS:
+        return jsonify({'success': False, 'message': '仅支持 JPG / PNG / GIF / WebP 格式'}), 400
+
+    # Limit size: 5 MB
+    file.seek(0, 2)
+    size = file.tell()
+    file.seek(0)
+    if size > 5 * 1024 * 1024:
+        return jsonify({'success': False, 'message': '图片不能超过 5 MB'}), 400
+
+    # Delete old avatar file if exists
+    user = User.query.get(current_user.id)
+    if user.avatar:
+        old_path = os.path.join(AVATAR_FOLDER, user.avatar)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    save_path = os.path.join(AVATAR_FOLDER, filename)
+    file.save(save_path)
+
+    user.avatar = filename
+    db.session.commit()
+
+    avatar_url = url_for('static', filename=f'uploads/avatars/{filename}')
+    return jsonify({'success': True, 'avatar_url': avatar_url})
 
 
 @app.route('/profile/settings')

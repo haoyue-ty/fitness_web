@@ -1,12 +1,93 @@
 {% extends "base.html" %}
 {% block title %}打卡日历 - 健身达人{% endblock %}
 
+{% block extra_styles %}
+<style>
+  /* ── Day detail panel ── */
+  #day-detail-panel {
+    display: none;
+    animation: fadeInUp 0.3s ease-out;
+  }
+  #day-detail-panel.visible { display: block; }
+
+  /* ── Calorie bar ── */
+  .cal-bar-track {
+    height: 8px;
+    border-radius: 99px;
+    background: rgba(255,255,255,0.06);
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .cal-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ── Meal row ── */
+  .meal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 13px;
+    gap: 8px;
+  }
+  .meal-row:last-child { border-bottom: none; }
+
+  /* ── Calendar day cell — clickable ── */
+  .cal-day {
+    height: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+  }
+  .cal-day:hover { transform: scale(1.08); }
+  .cal-day.selected {
+    ring: 2px solid #22c55e;
+    box-shadow: 0 0 0 2px #22c55e;
+  }
+  .cal-day.empty { cursor: default; }
+  .cal-day.empty:hover { transform: none; }
+
+  /* ── Net indicator ── */
+  .net-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* ── Loading skeleton ── */
+  .skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="fade-in">
+<div class="fade-in max-w-3xl mx-auto">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">📅 打卡日历</h1>
-            <p class="text-slate-400 mt-1 text-sm">坚持每日打卡，养成健康好习惯</p>
+            <p class="text-slate-400 mt-1 text-sm">点击任意日期查看当天热量详情</p>
         </div>
         <div class="flex items-center gap-4 self-start sm:self-auto">
             <div class="stat-card green py-3 px-5">
@@ -38,7 +119,7 @@
     </div>
 
     <!-- Calendar -->
-    <div class="glass-card p-6">
+    <div class="glass-card p-6 mb-5">
         <div class="flex items-center justify-between mb-6">
             <button onclick="changeMonth(-1)" class="btn-secondary py-2 px-2 sm:px-3 text-xs sm:text-sm">◀ 上月</button>
             <h3 class="text-base sm:text-lg font-bold text-white" id="calendarTitle"></h3>
@@ -73,6 +154,101 @@
                 <div class="w-3 h-3 rounded-full bg-white/10"></div>
                 <span>未打卡</span>
             </div>
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full" style="box-shadow:0 0 0 2px #22c55e;"></div>
+                <span>已选中</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Day Detail Panel ══ -->
+    <div id="day-detail-panel" class="glass-card p-6">
+        <!-- header -->
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-green-400/20 to-green-600/20 border border-green-500/25 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white" id="detail-date-title">—</h3>
+                    <div id="detail-checkin-badge" class="mt-0.5"></div>
+                </div>
+            </div>
+            <button onclick="closeDetail()"
+                class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all cursor-pointer">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Loading state -->
+        <div id="detail-loading" class="space-y-3">
+            <div class="skeleton h-5 w-3/4"></div>
+            <div class="skeleton h-5 w-1/2"></div>
+            <div class="skeleton h-14 w-full"></div>
+        </div>
+
+        <!-- Content -->
+        <div id="detail-content" class="hidden">
+            <!-- Calorie overview cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+                <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+                    <p class="text-xs text-slate-500 mb-1">总摄入</p>
+                    <p class="text-xl font-bold text-white" id="d-intake">—</p>
+                    <p class="text-[10px] text-slate-600">kcal</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+                    <p class="text-xs text-slate-500 mb-1">基础代谢</p>
+                    <p class="text-xl font-bold text-slate-300" id="d-bmr">—</p>
+                    <p class="text-[10px] text-slate-600">kcal</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+                    <p class="text-xs text-slate-500 mb-1">运动消耗</p>
+                    <p class="text-xl font-bold text-orange-400" id="d-exercise">—</p>
+                    <p class="text-[10px] text-slate-600">kcal</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+                    <p class="text-xs text-slate-500 mb-1">总消耗</p>
+                    <p class="text-xl font-bold text-purple-400" id="d-burn">—</p>
+                    <p class="text-[10px] text-slate-600">kcal</p>
+                </div>
+            </div>
+
+            <!-- Net balance bar -->
+            <div class="bg-white/4 rounded-xl p-4 mb-5 border border-white/5">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs text-slate-400 font-medium">热量平衡</span>
+                    <span class="net-pill" id="d-net-pill">—</span>
+                </div>
+                <div class="cal-bar-track">
+                    <div class="cal-bar-fill" id="d-bar" style="width:0%;background:linear-gradient(90deg,#22c55e,#4ade80)"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-600 mt-1">
+                    <span>0</span>
+                    <span id="d-bar-label">摄入 / 消耗</span>
+                </div>
+            </div>
+
+            <!-- Meal breakdown -->
+            <div id="d-meals-wrap">
+                <h4 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    饮食明细
+                </h4>
+                <div class="space-y-3" id="d-meals-body"></div>
+            </div>
+
+            <!-- Empty state -->
+            <div id="d-empty" class="hidden text-center py-8">
+                <div class="text-4xl mb-3">🍽️</div>
+                <p class="text-slate-400 text-sm">当天没有饮食记录</p>
+                <p class="text-slate-600 text-xs mt-1">去饮食记录页面添加吧</p>
+            </div>
         </div>
     </div>
 </div>
@@ -81,7 +257,7 @@
 {% block scripts %}
 <script>
     const checkinDates = {{ checkin_dates | safe }};
-    let currentYear, currentMonth;
+    let currentYear, currentMonth, selectedDate = null;
 
     (function init() {
         const today = new Date();
@@ -93,40 +269,45 @@
     function changeMonth(delta) {
         currentMonth += delta;
         if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
         renderCalendar();
     }
 
     function renderCalendar() {
         const title = document.getElementById('calendarTitle');
-        const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+        const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
         title.textContent = `${currentYear}年 ${monthNames[currentMonth]}`;
 
         const grid = document.getElementById('calendarGrid');
         grid.innerHTML = '';
 
-        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const firstDay    = new Date(currentYear, currentMonth, 1).getDay();
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-        const today = new Date();
-        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const today       = new Date();
+        const todayStr    = fmtDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
 
-        // Empty cells before first day
+        // Empty cells
         for (let i = 0; i < firstDay; i++) {
             const cell = document.createElement('div');
-            cell.className = 'h-14';
+            cell.className = 'cal-day empty';
             grid.appendChild(cell);
         }
 
         // Day cells
         for (let d = 1; d <= daysInMonth; d++) {
-            const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const isToday = dateStr === todayStr;
+            const dateStr  = fmtDate(currentYear, currentMonth + 1, d);
+            const isToday  = dateStr === todayStr;
             const isChecked = checkinDates.includes(dateStr);
+            const isSelected = dateStr === selectedDate;
 
             const cell = document.createElement('div');
-            cell.className = `h-14 flex flex-col items-center justify-center rounded-xl transition-all relative cursor-default`;
+            cell.className = 'cal-day';
+            cell.dataset.date = dateStr;
+            cell.onclick = () => selectDay(dateStr, cell);
 
-            if (isToday) {
+            if (isSelected) {
+                cell.classList.add('selected');
+            } else if (isToday) {
                 cell.classList.add('border', 'border-blue-500/50', 'bg-blue-500/10');
             } else if (isChecked) {
                 cell.classList.add('bg-green-500/10');
@@ -135,7 +316,7 @@
             }
 
             const num = document.createElement('span');
-            num.className = `text-sm font-medium ${isToday ? 'text-blue-400' : isChecked ? 'text-green-400' : 'text-slate-300'}`;
+            num.className = `text-sm font-medium ${isSelected ? 'text-green-300' : isToday ? 'text-blue-400' : isChecked ? 'text-green-400' : 'text-slate-300'}`;
             num.textContent = d;
             cell.appendChild(num);
 
@@ -149,12 +330,146 @@
         }
     }
 
+    function fmtDate(y, m, d) {
+        return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    }
+
+    /* ─── Select a day ─── */
+    async function selectDay(dateStr, cellEl) {
+        selectedDate = dateStr;
+        renderCalendar();   // re-render to update selection highlight
+
+        // Show panel with loading state
+        const panel = document.getElementById('day-detail-panel');
+        panel.classList.add('visible');
+
+        document.getElementById('detail-loading').classList.remove('hidden');
+        document.getElementById('detail-content').classList.add('hidden');
+
+        // Format date title
+        const [y, m, d] = dateStr.split('-');
+        document.getElementById('detail-date-title').textContent = `${y}年${parseInt(m)}月${parseInt(d)}日`;
+
+        // Scroll into view
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        try {
+            const res = await fetch(`/checkin/day/${dateStr}`);
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+            renderDetail(data);
+        } catch (e) {
+            showToast('加载失败，请重试', 'error');
+            document.getElementById('detail-loading').classList.add('hidden');
+        }
+    }
+
+    function closeDetail() {
+        document.getElementById('day-detail-panel').classList.remove('visible');
+        selectedDate = null;
+        renderCalendar();
+    }
+
+    /* ─── Render day detail ─── */
+    function renderDetail(d) {
+        document.getElementById('detail-loading').classList.add('hidden');
+        document.getElementById('detail-content').classList.remove('hidden');
+
+        // Check-in badge
+        const badge = document.getElementById('detail-checkin-badge');
+        badge.innerHTML = d.checked
+            ? '<span style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#4ade80;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:600;">✓ 已打卡</span>'
+            : '<span style="background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.25);color:#64748b;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:600;">未打卡</span>';
+
+        // Overview numbers
+        document.getElementById('d-intake').textContent   = d.total_intake;
+        document.getElementById('d-bmr').textContent      = d.bmr;
+        document.getElementById('d-exercise').textContent = d.exercise_burn;
+        document.getElementById('d-burn').textContent     = d.total_burn;
+
+        // Net balance
+        const net    = d.net;
+        const netPill = document.getElementById('d-net-pill');
+        if (net > 0) {
+            netPill.style.cssText = 'background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:5px;';
+            netPill.textContent = `+${net} kcal 热量盈余`;
+        } else if (net < 0) {
+            netPill.style.cssText = 'background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);color:#4ade80;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:5px;';
+            netPill.textContent = `${net} kcal 热量亏缺`;
+        } else {
+            netPill.style.cssText = 'background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.2);color:#94a3b8;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:5px;';
+            netPill.textContent = '0 kcal 完美平衡';
+        }
+
+        // Progress bar: show intake as % of total_burn
+        const bar  = document.getElementById('d-bar');
+        const pct  = d.total_burn > 0 ? Math.min(d.total_intake / d.total_burn * 100, 120) : 0;
+        bar.style.width = pct + '%';
+        bar.style.background = pct > 100
+            ? 'linear-gradient(90deg,#f97316,#ef4444)'
+            : pct > 80
+            ? 'linear-gradient(90deg,#fbbf24,#f97316)'
+            : 'linear-gradient(90deg,#22c55e,#4ade80)';
+        document.getElementById('d-bar-label').textContent = `${d.total_intake} / ${d.total_burn} kcal`;
+
+        // Meals
+        const allMeals = [
+            { name: '早餐', icon: '🌅', items: d.breakfast },
+            { name: '午餐', icon: '☀️', items: d.lunch },
+            { name: '晚餐', icon: '🌙', items: d.dinner },
+        ];
+        const hasAny = allMeals.some(m => m.items.length > 0);
+
+        const mealsWrap = document.getElementById('d-meals-wrap');
+        const emptyEl   = document.getElementById('d-empty');
+        const mealsBody = document.getElementById('d-meals-body');
+
+        if (!hasAny) {
+            mealsWrap.classList.add('hidden');
+            emptyEl.classList.remove('hidden');
+        } else {
+            mealsWrap.classList.remove('hidden');
+            emptyEl.classList.add('hidden');
+            mealsBody.innerHTML = '';
+
+            allMeals.forEach(({ name, icon, items }) => {
+                if (!items.length) return;
+                const total = items.reduce((s, r) => s + r.calories, 0);
+                const section = document.createElement('div');
+                section.className = 'bg-white/4 rounded-xl p-3 border border-white/5';
+                section.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-semibold text-slate-200">${icon} ${name}</span>
+                        <span class="text-xs font-bold text-orange-400">${total.toFixed(0)} kcal</span>
+                    </div>
+                    ${items.map(r => `
+                        <div class="meal-row">
+                            <span class="text-slate-400 truncate">${r.food_name}</span>
+                            <span class="text-slate-300 font-medium flex-shrink-0">${r.calories} kcal</span>
+                        </div>`).join('')}
+                `;
+                mealsBody.appendChild(section);
+            });
+
+            // Exercise row
+            if (d.exercise_burn > 0) {
+                const exRow = document.createElement('div');
+                exRow.className = 'bg-orange-500/8 rounded-xl p-3 border border-orange-500/20 flex justify-between items-center';
+                exRow.innerHTML = `
+                    <span class="text-sm text-orange-300 font-medium">🏃 运动消耗${d.exercise_desc ? '（' + d.exercise_desc + '）' : ''}</span>
+                    <span class="text-sm font-bold text-orange-400">-${d.exercise_burn} kcal</span>
+                `;
+                mealsBody.appendChild(exRow);
+            }
+        }
+    }
+
+    /* ─── Check-in ─── */
     async function doCheckIn() {
         const btn = document.getElementById('checkinBtn');
         if (!btn) return;
         btn.disabled = true;
         btn.innerHTML = '<span class="animate-spin inline-block">⏳</span> 打卡中...';
-
         const result = await apiPost('/checkin/do', {});
         if (result.success) {
             showToast(result.message, 'success');
