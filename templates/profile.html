@@ -4,7 +4,7 @@
 
 {% block extra_styles %}
 <style>
-  /* ── Profile hero banner ── */
+  /* ── 个人信息横幅样式 ── */
   .profile-banner {
     background: linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(139,92,246,0.12) 50%, rgba(249,115,22,0.1) 100%);
     border: 1px solid rgba(255,255,255,0.07);
@@ -23,7 +23,7 @@
     pointer-events: none;
   }
 
-  /* ── Avatar ring ── */
+  /* ── 头像光环样式 ── */
   .avatar-ring {
     width: 80px; height: 80px;
     border-radius: 50%;
@@ -60,7 +60,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin-icon { animation: spin 0.75s linear infinite; }
 
-  /* ── Metrics display cards ── */
+  /* ── 数据指标展示卡片样式 ── */
   .metric-display {
     background: rgba(30,41,59,0.6);
     border: 1px solid rgba(255,255,255,0.07);
@@ -86,7 +86,7 @@
     box-shadow: 0 10px 36px rgba(0,0,0,0.25);
   }
 
-  /* ── BMR result panel ── */
+  /* ── 基础代谢率展示面板样式 ── */
   .bmr-panel {
     background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(74,222,128,0.06));
     border: 1px solid rgba(34,197,94,0.25);
@@ -122,7 +122,7 @@
     100% { transform: scale(1); }
   }
 
-  /* ── Calorie tiers ── */
+  /* ── 热量消耗层级样式 ── */
   .calorie-tier {
     background: rgba(30,41,59,0.5);
     border: 1px solid rgba(255,255,255,0.05);
@@ -135,7 +135,7 @@
   }
   .calorie-tier:hover { border-color: rgba(255,255,255,0.1); }
 
-  /* ── Form section ── */
+  /* ── 表单区域样式 ── */
   .form-section {
     background: rgba(30,41,59,0.7);
     border: 1px solid rgba(255,255,255,0.07);
@@ -163,7 +163,7 @@
     pointer-events: none;
   }
 
-  /* ── Gender toggle ── */
+  /* ── 性别切换按钮样式 ── */
   .gender-toggle {
     display: flex;
     gap: 8px;
@@ -196,7 +196,7 @@
     color: #f472b6;
   }
 
-  /* ── Progress ring ── */
+  /* ── 环形进度条样式 ── */
   .progress-ring-wrap {
     position: relative;
     width: 110px; height: 110px;
@@ -212,7 +212,7 @@
   }
   .progress-ring-label span { font-size: 20px; font-weight: 700; color: #4ade80; line-height: 1; }
 
-  /* ── Activity-based calorie table ── */
+  /* ── 基于活动强度的热量推荐表格样式 ── */
   .activity-row {
     display: flex;
     justify-content: space-between;
@@ -229,7 +229,7 @@
     flex-shrink: 0;
   }
 
-  /* ── BMI badge ── */
+  /* ── BMI 徽章样式 ── */
   .bmi-badge {
     display: inline-flex;
     align-items: center;
@@ -240,14 +240,14 @@
     font-weight: 600;
   }
 
-  /* ── Save button pulse ── */
+  /* ── 保存按钮呼吸灯效果 ── */
   #save-btn:not(:disabled):hover {
     box-shadow: 0 8px 28px rgba(34,197,94,0.4);
     transform: translateY(-2px);
   }
   #save-btn:active { transform: scale(0.97); }
 
-  /* ── Responsive tweaks ── */
+  /* ── 响应式适配微调 ── */
   @media (max-width: 640px) {
     .bmr-value { font-size: 40px; }
     .profile-banner { padding: 20px; }
@@ -260,10 +260,10 @@
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6 fade-in">
 
-  <!-- ══════════════════ PROFILE BANNER ══════════════════ -->
+  <!-- ══════════════════ 个人信息横幅 ══════════════════ -->
   <div class="profile-banner">
     <div class="flex items-center gap-4 flex-wrap">
-      <!-- Clickable avatar for upload -->
+      <!-- 可点击上传头像 -->
       <div class="avatar-ring" id="profile-avatar-ring"
            onclick="document.getElementById('avatar-input').click()"
            title="点击更换头像">
@@ -274,7 +274,7 @@
         {% else %}
         <span id="profile-avatar-initial">{{ current_user.username[0].upper() }}</span>
         {% endif %}
-        <!-- Hover / loading overlay -->
+        <!-- 悬停 / 加载中遮罩层 -->
         <div class="avatar-overlay" id="avatar-overlay">
           <svg id="overlay-cam-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -290,7 +290,7 @@
         <p class="text-slate-400 text-sm mt-0.5">{{ current_user.email or '未绑定邮箱' }}</p>
         <p class="text-slate-500 text-xs mt-1">加入于 {{ current_user.created_at.strftime('%Y年%m月%d日') }}</p>
       </div>
-      <!-- Quick metric chips -->
+      <!-- 快捷数据展示标签 -->
       <div class="flex gap-2 flex-wrap mt-2 sm:mt-0">
         {% if current_user.height %}
         <span class="px-3 py-1 bg-blue-500/10 border border-blue-500/25 text-blue-400 text-xs font-semibold rounded-full">
@@ -316,10 +316,10 @@
     </div>
   </div>
 
-  <!-- ══════════════════ MAIN GRID ══════════════════ -->
+  <!-- ══════════════════ 主要栅格布局 ══════════════════ -->
   <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-    <!-- ── LEFT: Edit Form ── -->
+    <!-- ── 左侧：编辑表单 ── -->
     <div class="lg:col-span-2 space-y-5">
 
       <div class="form-section">
@@ -333,7 +333,7 @@
         <form id="profile-form" action="{{ url_for('profile_update') }}" method="post">
           <div class="space-y-4">
 
-            <!-- Weight -->
+            <!-- 体重 -->
             <div class="input-group">
               <label for="weight_kg">体重</label>
               <input
@@ -346,7 +346,7 @@
               <span class="unit">kg</span>
             </div>
 
-            <!-- Height -->
+            <!-- 身高 -->
             <div class="input-group">
               <label for="height">身高</label>
               <input
@@ -359,7 +359,7 @@
               <span class="unit">cm</span>
             </div>
 
-            <!-- Age -->
+            <!-- 年龄 -->
             <div class="input-group">
               <label for="age">年龄</label>
               <input
@@ -372,7 +372,7 @@
               <span class="unit">岁</span>
             </div>
 
-            <!-- Gender -->
+            <!-- 性别 -->
             <div class="input-group">
               <label>性别</label>
               <input type="hidden" id="gender" name="gender" value="{{ current_user.gender or '' }}">
@@ -398,7 +398,7 @@
 
           </div>
 
-          <!-- Save button -->
+          <!-- 保存按钮 -->
           <button id="save-btn" type="submit"
             class="btn-primary w-full mt-6 justify-center transition-all duration-250">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -409,7 +409,7 @@
         </form>
       </div>
 
-      <!-- Quick metric cards -->
+      <!-- 快捷数据卡片 -->
       <div class="grid grid-cols-2 gap-3">
         <div class="metric-display" style="--metric-color: #22c55e;">
           <p class="text-xs text-slate-500 mb-1">当前体重</p>
@@ -444,10 +444,10 @@
 
     </div>
 
-    <!-- ── RIGHT: BMR Results ── -->
+    <!-- ── 右侧：基础代谢率计算结果 ── -->
     <div class="lg:col-span-3 space-y-5">
 
-      <!-- BMR main panel -->
+      <!-- 基础代谢率主面板 -->
       <div class="bmr-panel">
         <div class="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -467,7 +467,7 @@
             </p>
           </div>
 
-          <!-- Progress ring (% of 2000 kcal reference) -->
+          <!-- 环形进度条（以 2000 kcal 为基准参考） -->
           <div class="progress-ring-wrap" id="ring-wrap" style="{% if not bmr %}opacity:0.3{% endif %}">
             <svg width="110" height="110" viewBox="0 0 110 110">
               <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
@@ -492,7 +492,7 @@
           </div>
         </div>
 
-        <!-- BMI result row -->
+        <!-- BMI 结果行 -->
         <div class="mt-4 pt-4 border-t border-white/5 flex items-center gap-3 flex-wrap">
           <p class="text-xs text-slate-500">BMI 指数</p>
           <span class="bmi-badge" id="bmi-badge">
@@ -514,7 +514,7 @@
         </div>
       </div>
 
-      <!-- Activity-based calorie needs -->
+      <!-- 基于活动强度的热量需求推荐 -->
       <div class="form-section">
         <h3 class="text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -563,7 +563,7 @@
         </div>
       </div>
 
-      <!-- Goal cards row -->
+      <!-- 目标热量卡片行 -->
       <div class="grid grid-cols-3 gap-3">
         <div class="glass-card p-4 text-center">
           <p class="text-xs text-slate-500 mb-1">减脂目标</p>
@@ -589,15 +589,15 @@
 
 {% block scripts %}
 <script>
-  /* ──────────────── State ──────────────── */
+  /* ──────────────── 状态数据 ──────────────── */
   let currentGender = '{{ current_user.gender or "" }}';
 
-  /* ──────────────── Avatar upload ──────────────── */
+  /* ──────────────── 头像上传逻辑 ──────────────── */
   async function uploadAvatar(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
 
-    // Client-side validation
+    // 客户端校验格式
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       showToast('仅支持 JPG / PNG / GIF / WebP 格式', 'error');
@@ -610,7 +610,7 @@
       return;
     }
 
-    // Show loading state on avatar ring
+    // 在头像光环上显示加载状态
     const ring    = document.getElementById('profile-avatar-ring');
     const overlay = document.getElementById('avatar-overlay');
     const ovTxt   = document.getElementById('overlay-txt');
@@ -619,7 +619,7 @@
     ovTxt.textContent = '上传中…';
     ovIcon.classList.add('spin-icon');
 
-    // Upload via FormData
+    // 通过 FormData 上传
     const fd = new FormData();
     fd.append('avatar', file);
 
@@ -630,11 +630,11 @@
       if (data.success) {
         const url = data.avatar_url + '?t=' + Date.now(); // bust cache
 
-        // ── Update profile banner avatar ──
+        // ── 更新个人信息横幅头像 ──
         let img = document.getElementById('profile-avatar-img');
         const initial = document.getElementById('profile-avatar-initial');
         if (!img) {
-          // first time: remove the initial letter span and create img
+          // 首次上传：移除默认字母显示，创建 img 元素
           if (initial) initial.remove();
           img = document.createElement('img');
           img.id = 'profile-avatar-img';
@@ -644,13 +644,13 @@
         }
         img.src = url;
 
-        // ── Update sidebar small avatar ──
+        // ── 更新侧边栏小头像 ──
         const sidebarEl = document.getElementById('sidebar-avatar');
         if (sidebarEl) {
           sidebarEl.innerHTML = `<img src="${url}" alt="avatar" class="w-full h-full object-cover" style="border-radius:50%">`;
         }
 
-        // ── Update mobile header avatar ──
+        // ── 更新移动端顶部小头像 ──
         const mobileEl = document.getElementById('mobile-header-avatar');
         if (mobileEl) {
           mobileEl.innerHTML = `<img src="${url}" alt="avatar" class="w-full h-full object-cover" style="border-radius:50%">`;
@@ -663,7 +663,7 @@
     } catch (e) {
       showToast('网络错误，请重试', 'error');
     } finally {
-      // Restore ring state
+      // 恢复光环初始状态
       ring.classList.remove('uploading');
       ovTxt.textContent = '更换头像';
       ovIcon.classList.remove('spin-icon');
@@ -673,7 +673,7 @@
 
 
 
-  /* ──────────────── Gender toggle ──────────────── */
+  /* ──────────────── 性别切换逻辑 ──────────────── */
   function setGender(g) {
     currentGender = g;
     document.getElementById('gender').value = g;
@@ -684,7 +684,7 @@
     liveCalc();
   }
 
-  /* ──────────────── BMR calculation (Mifflin-St Jeor) ──────────────── */
+  /* ──────────────── 基础代谢计算 (Mifflin-St Jeor 公式) ──────────────── */
   function calcBMR(weight, height, age, gender) {
     if (!weight || !height || !age || !gender) return null;
     const base = 10 * weight + 6.25 * height - 5 * age;
@@ -703,7 +703,7 @@
     return { text: '肥胖', color: '#f87171', bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.3)' };
   }
 
-  /* ──────────────── Live recalculation ──────────────── */
+  /* ──────────────── 实时重新计算逻辑 ──────────────── */
   function liveCalc() {
     const weight = parseFloat(document.getElementById('weight_kg').value);
     const height = parseFloat(document.getElementById('height').value);
@@ -713,7 +713,7 @@
     const bmr = calcBMR(weight, height, age, gender);
     const bmi = calcBMI(weight, height);
 
-    // ── BMR display ──
+    // ── 更新基础代谢显示 ──
     const bmrEl = document.getElementById('bmr-display');
     if (bmr) {
       if (bmrEl.textContent.trim() !== String(bmr)) {
@@ -730,7 +730,7 @@
       document.getElementById('bmr-formula-note').textContent = '请填写完整的身体信息以计算基础代谢率';
     }
 
-    // ── Progress ring ──
+    // ── 更新环形进度条 ──
     const ring = document.getElementById('ring-circle');
     const ringPct = document.getElementById('ring-pct');
     const ringWrap = document.getElementById('ring-wrap');
@@ -745,7 +745,7 @@
       ringWrap.style.opacity = '0.3';
     }
 
-    // ── BMI ──
+    // ── 更新 BMI ──
     const mcBmi = document.getElementById('mc-bmi');
     const bmiEls = document.getElementById('bmi-badge');
     if (bmi) {
@@ -760,12 +760,12 @@
       bmiEls.innerHTML = `<span style="background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.2);color:#64748b;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600;">— 待计算</span>`;
     }
 
-    // ── Metric cards ──
+    // ── 更新快捷数据卡片 ──
     document.getElementById('mc-weight').textContent = weight || '—';
     document.getElementById('mc-height').textContent = height ? Math.round(height) : '—';
     document.getElementById('mc-age').textContent = age || '—';
 
-    // ── Activity table (Harris-Benedict multipliers) ──
+    // ── 更新活动强度表格 (基于 Harris-Benedict 乘数) ──
     const factors = {
       sedentary: 1.2, light: 1.375, moderate: 1.55, heavy: 1.725, athlete: 1.9
     };
@@ -775,14 +775,14 @@
       document.getElementById(ids[i]).textContent = bmr ? Math.round(bmr * factors[k]) + ' kcal' : '—';
     });
 
-    // ── Goal cards ── (light activity as maintenance base)
+    // ── 更新目标热量卡片 ── (以轻度活动为维持基准)
     const maintain = bmr ? Math.round(bmr * 1.375) : null;
     document.getElementById('goal-loss').textContent = maintain ? maintain - 500 : '—';
     document.getElementById('goal-maintain').textContent = maintain || '—';
     document.getElementById('goal-gain').textContent = maintain ? maintain + 300 : '—';
   }
 
-  // Run on load with existing data
+  // 页面加载完成时执行一次，初始化现有数据
   document.addEventListener('DOMContentLoaded', liveCalc);
 </script>
 {% endblock %}

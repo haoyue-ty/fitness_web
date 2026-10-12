@@ -1,0 +1,18 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+instance/
+
+# 编辑器 / IDE
+.idea/
+.vscode/
+
+# 智能体工作目录（本地数据，不纳入版本控制）
+.workbuddy/
+
+# 系统文件
+.DS_Store
+Thumbs.db

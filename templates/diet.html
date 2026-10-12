@@ -10,7 +10,7 @@
         </div>
     </div>
 
-    <!-- Summary Cards -->
+    <!-- 数据概览卡片 -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="stat-card green">
             <p class="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">今日总摄入</p>
@@ -35,7 +35,7 @@
         </div>
     </div>
 
-    <!-- Exercise Input -->
+    <!-- 运动消耗输入区域 -->
     <div class="glass-card p-5 mb-6">
         <h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">🏃 今日运动消耗</h3>
         <div class="flex flex-col sm:flex-row gap-3">
@@ -47,7 +47,7 @@
         </div>
     </div>
 
-    <!-- Meal Sections -->
+    <!-- 各餐次记录区域 -->
     {% for meal_type, meal_label, meal_icon, meal_records in
     [('breakfast','早餐','🌅',breakfast),('lunch','午餐','☀️',lunch),('dinner','晚餐','🌙',dinner)] %}
     <div class="glass-card p-6 mb-5">
@@ -90,7 +90,7 @@
     {% endfor %}
 </div>
 
-<!-- Add Food Modal -->
+<!-- 手动添加食物弹窗 -->
 <div id="addModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="glass-card p-6 w-full max-w-md mx-4" style="background: rgba(15,23,42,0.95);">
         <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">🍽️ 手动添加食物</h3>
@@ -112,7 +112,7 @@
     </div>
 </div>
 
-<!-- Recognize Modal -->
+<!-- AI 食物识别弹窗 -->
 <div id="recognizeModal"
     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
     <div class="glass-card p-6 w-full max-w-md mx-4" style="background: rgba(15,23,42,0.95);">

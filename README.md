@@ -20,7 +20,7 @@
     *   **可视化日历**：按月展示打卡记录。
     *   **详情穿透**：点击日历具体日期，可弹出暗色毛玻璃面板查看当天的饮食、运动及热量汇总。
 *   **🤖 AI 健康助手**
-    *   **专业建议**：基于近 7 天的数据，由智谱 AI 提供个性化的饮食与健身建议。
+    *   **专业建议**：基于近 7 天的数据，由 DeepSeek 提供个性化的饮食与健身建议。
     *   **实时咨询**：内置基于大模型的健康助手聊天窗口，随时解答健康疑问。
 
 ## 🛠️ 技术栈
@@ -29,7 +29,7 @@
 *   **数据库**: MySQL + SQLAlchemy (ORM)
 *   **前端**: HTML5 + Vanilla CSS (Glassmorphism 风格) + Tailwind CSS (部分组件)
 *   **可视化**: Apache ECharts
-*   **AI 服务**: 智谱 AI (ChatGLM系列), 百度 AI (菜品识别)
+*   **AI 服务**: DeepSeek（健康分析与对话）、百度 AI（菜品识别）
 *   **邮件服务**: Flask-Mail (用于发送验证码)
 
 ## 🚀 快速启动
@@ -49,11 +49,11 @@ pip install -r requirements.txt
 
 ### 2. 配置说明
 
-修改项目根目录下的 `config.py` 文件：
+将项目根目录的 `.env.example` 复制为 `.env`，填入实际配置（`.env` 已被 Git 忽略）：
 
-*   **DATABASE**: 配置您的 MySQL 连接字符串。
-*   **MAIL**: 配置用于发送验证码的 SMTP 账号。
-*   **AI API**: 填入您的 `ZHIPU_API_KEY`、`BAIDU_API_KEY` 和 `BAIDU_SECRET_KEY`。
+*   **DATABASE_URL**: 配置 MySQL 连接字符串；未配置时默认使用本地 SQLite。
+*   **MAIL_USERNAME / MAIL_PASSWORD**: 配置发送验证码的 SMTP 账号和授权码。
+*   **AI API**: 配置 `DEEPSEEK_API_KEY`、`BAIDU_API_KEY` 和 `BAIDU_SECRET_KEY`。可选设置 `DEEPSEEK_MODEL`，默认使用 `deepseek-flash`。
 
 ### 3. 初始化数据库
 

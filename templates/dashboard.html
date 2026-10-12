@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="fade-in">
-    <!-- Header -->
+    <!-- 页面标题及头部信息 -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl sm:text-3xl font-bold text-white">你好，{{ current_user.username }} 👋</h1>
@@ -24,9 +24,9 @@
         </div>
     </div>
 
-    <!-- Stat Cards -->
+    <!-- 数据统计卡片 -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <!-- Total Intake -->
+        <!-- 总摄入量卡片 -->
         <div class="stat-card green">
             <div class="flex items-center justify-between mb-3">
                 <p class="text-slate-400 text-xs font-medium uppercase tracking-wide">今日摄入</p>
@@ -36,7 +36,7 @@
             <p class="text-xs text-slate-500 mt-1">kcal</p>
         </div>
 
-        <!-- BMR + Exercise -->
+        <!-- 基础代谢 + 运动消耗卡片 -->
         <div class="stat-card orange">
             <div class="flex items-center justify-between mb-3">
                 <p class="text-slate-400 text-xs font-medium uppercase tracking-wide">总消耗</p>
@@ -46,7 +46,7 @@
             <p class="text-xs text-slate-500 mt-1">kcal · 基础{{ bmr }} + 运动{{ "%.0f"|format(exercise_burn) }}</p>
         </div>
 
-        <!-- Calorie Diff -->
+        <!-- 热量差卡片 -->
         <div class="stat-card {% if calorie_diff > 0 %}purple{% else %}blue{% endif %}">
             <div class="flex items-center justify-between mb-3">
                 <p class="text-slate-400 text-xs font-medium uppercase tracking-wide">热量差</p>
@@ -62,7 +62,7 @@
             <p class="text-xs text-slate-500 mt-1">kcal · {{ '热量过剩' if calorie_diff > 0 else '热量亏缺' }}</p>
         </div>
 
-        <!-- Weight -->
+        <!-- 体重卡片 -->
         <div class="stat-card blue">
             <div class="flex items-center justify-between mb-3">
                 <p class="text-slate-400 text-xs font-medium uppercase tracking-wide">当前体重</p>
@@ -73,10 +73,10 @@
         </div>
     </div>
 
-    <!-- Two Column Layout -->
+    <!-- 两列布局 -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        <!-- Quick Actions -->
+        <!-- 快捷操作区域 -->
         <div class="glass-card p-6">
             <h2 class="text-lg font-bold text-white mb-5 flex items-center gap-2">
                 <span class="text-green-400">⚡</span> 快捷操作
@@ -105,13 +105,13 @@
             </div>
         </div>
 
-        <!-- Today Summary -->
+        <!-- 今日健康概况 -->
         <div class="glass-card p-6">
             <h2 class="text-lg font-bold text-white mb-5 flex items-center gap-2">
                 <span class="text-orange-400">📊</span> 今日健康概况
             </h2>
 
-            <!-- Calorie progress bar -->
+            <!-- 热量进度条 -->
             <div class="mb-5">
                 <div class="flex justify-between text-xs text-slate-400 mb-2">
                     <span>热量摄入</span>
@@ -126,7 +126,7 @@
                 </div>
             </div>
 
-            <!-- Stats list -->
+            <!-- 数据列表 -->
             <div class="space-y-3">
                 <div class="flex justify-between items-center py-2 border-b border-white/5">
                     <span class="text-slate-400 text-sm flex items-center gap-2">🍳 早餐</span>
@@ -148,7 +148,7 @@
         </div>
     </div>
 
-    <!-- Motivation Banner -->
+    <!-- 激励横幅 -->
     <div class="mt-6 rounded-2xl p-6 relative overflow-hidden"
         style="background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(74,222,128,0.05)); border: 1px solid rgba(34,197,94,0.2);">
         <div class="absolute top-0 right-0 w-48 h-48 rounded-full bg-green-500/5 blur-3xl"></div>
